@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Recommendations | ConflictDetector</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-container-lowest": "#FFFFFF",
+            "secondary-container": "#FFD699", // Saffron-ish
+            "surface-container-low": "#FFF9F5", // Warm White
+            "surface": "#FFFBFA", // Very Warm White
+            "surface-container-high": "#FFE9E0", // Light Coral
+            "primary-container": "#FF7F50", // Coral
+            "on-surface-variant": "#5C4033", // Warm Brown
+            "on-tertiary-fixed-variant": "#6f3814",
+            "on-secondary-container": "#7A4100",
+            "on-surface": "#2D1B13",
+            "primary": "#E65C2E", // Darker Coral
+            "secondary": "#F4A460", // Sandy Brown/Saffron
+            "tertiary": "#7a401c",
+            "outline-variant": "#D9C5B2"
+          },
+          fontFamily: {
+            "headline": ["Lexend"],
+            "body": ["Lexend"],
+            "label": ["Lexend"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.5rem",
+            "lg": "0.75rem",
+            "xl": "1rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+<style>
+    body { font-family: 'Lexend', sans-serif; background-color: #FFFBFA; color: #2D1B13; -webkit-font-smoothing: antialiased; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(24px); }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+  </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- TopNavBar (Shared Component) -->
+<nav class="fixed top-0 z-50 w-full bg-surface/90 backdrop-blur-md flex justify-between items-center px-8 py-4 max-w-none">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-extrabold text-primary tracking-tighter">ConflictDetector</span>
+<div class="hidden md:flex gap-6 items-center">
+<a class="text-[16px] font-medium text-on-surface-variant/70 hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="text-[16px] font-medium text-on-surface-variant/70 hover:text-primary transition-colors" href="#">History</a>
+<a class="text-[16px] font-bold text-primary border-b-2 border-primary pb-1" href="#">Resources</a>
+<a class="text-[16px] font-medium text-on-surface-variant/70 hover:text-primary transition-colors" href="#">Support</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<button class="p-2 hover:bg-surface-container-high rounded-lg transition-all"><span class="material-symbols-outlined text-primary">notifications</span></button>
+<button class="p-2 hover:bg-surface-container-high rounded-lg transition-all"><span class="material-symbols-outlined text-primary">account_circle</span></button>
+</div>
+<button class="bg-primary-container text-white px-6 py-2.5 rounded-lg font-semibold hover:opacity-90 transition-all active:scale-95 shadow-sm">Save Report</button>
+</div>
+</nav>
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-full flex flex-col pt-24 bg-surface w-64 border-r border-surface-container-high z-40 hidden md:flex">
+<div class="px-6 mb-8">
+<h2 class="text-lg font-bold text-primary">Clinical Sanctuary</h2>
+<p class="text-[10px] text-on-surface-variant/70 uppercase tracking-widest font-bold">System Active • FDA Verified</p>
+</div>
+<nav class="flex-1 space-y-1">
+<div class="text-on-surface-variant/70 py-3 pl-6 hover:translate-x-1 transition-transform flex items-center gap-3 cursor-pointer">
+<span class="material-symbols-outlined">edit_note</span>
+<span class="text-sm font-medium">Intake</span>
+</div>
+<div class="text-on-surface-variant/70 py-3 pl-6 hover:translate-x-1 transition-transform flex items-center gap-3 cursor-pointer">
+<span class="material-symbols-outlined">hourglass_empty</span>
+<span class="text-sm font-medium">Analysis</span>
+</div>
+<div class="text-on-surface-variant/70 py-3 pl-6 hover:translate-x-1 transition-transform flex items-center gap-3 cursor-pointer">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-sm font-medium">Results</span>
+</div>
+<div class="text-on-surface-variant/70 py-3 pl-6 hover:translate-x-1 transition-transform flex items-center gap-3 cursor-pointer">
+<span class="material-symbols-outlined">swap_horiz</span>
+<span class="text-sm font-medium">Details</span>
+</div>
+<div class="bg-primary-container text-white rounded-r-full py-3 pl-6 shadow-sm flex items-center gap-3">
+<span class="material-symbols-outlined">medical_services</span>
+<span class="text-sm font-medium">Guidance</span>
+</div>
+</nav>
+<div class="p-6 mt-auto border-t border-surface-container-high space-y-4">
+<div class="flex items-center gap-3 text-on-surface-variant/70 text-sm font-medium cursor-pointer hover:text-primary transition-colors">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant/70 text-sm font-medium cursor-pointer hover:text-primary transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+<span>Help</span>
+</div>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="md:ml-64 pt-24 min-h-screen px-6 md:px-12 pb-12">
+<div class="max-w-6xl mx-auto">
+<!-- Header Section -->
+<header class="mb-12">
+<h1 class="text-[3.5rem] font-extrabold text-on-surface leading-[1.1] mb-4">Your Path to Peace of Mind</h1>
+<p class="text-[1.125rem] text-on-surface-variant max-w-2xl leading-relaxed">
+          Based on the detected interaction between <span class="font-semibold text-primary">Lisinopril</span> and <span class="font-semibold text-primary">Ibuprofen</span>, our clinical team has prepared the following resolution plan.
+        </p>
+</header>
+<!-- Bento Grid Recommendations -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Main Action Plan -->
+<section class="lg:col-span-8 bg-surface-container-low border border-surface-container-high rounded-xl p-8 space-y-8">
+<div class="flex items-center justify-between">
+<h2 class="text-[1.75rem] font-bold text-on-surface">What you should do next</h2>
+<div class="flex gap-2">
+<span class="bg-primary text-white px-3 py-1 rounded-full text-[0.75rem] font-bold uppercase tracking-wider">Priority: Urgent</span>
+</div>
+</div>
+<div class="space-y-6">
+<!-- Step 1 -->
+<div class="flex gap-6 items-start">
+<div class="flex-shrink-0 w-10 h-10 bg-primary-container text-white rounded-full flex items-center justify-center font-bold text-lg">1</div>
+<div>
+<h3 class="text-xl font-bold mb-2">Pause this for now</h3>
+<p class="text-[1.125rem] text-on-surface-variant leading-relaxed">
+                  Discontinue the use of Ibuprofen immediately. The combination can significantly reduce the effectiveness of your blood pressure medication and strain kidney function.
+                </p>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="flex gap-6 items-start">
+<div class="flex-shrink-0 w-10 h-10 bg-primary-container text-white rounded-full flex items-center justify-center font-bold text-lg">2</div>
+<div>
+<h3 class="text-xl font-bold mb-2">Try this instead</h3>
+<p class="text-[1.125rem] text-on-surface-variant leading-relaxed">
+                  For pain relief, use Acetaminophen (Tylenol) as it does not interact with ACE inhibitors. Limit dosage to no more than 3,000mg per 24 hours.
+                </p>
+</div>
+</div>
+<!-- Step 3 -->
+<div class="flex gap-6 items-start">
+<div class="flex-shrink-0 w-10 h-10 bg-primary-container text-white rounded-full flex items-center justify-center font-bold text-lg">3</div>
+<div>
+<h3 class="text-xl font-bold mb-2">Keep an eye on your BP</h3>
+<p class="text-[1.125rem] text-on-surface-variant leading-relaxed">
+                  Record your blood pressure twice daily for the next 72 hours. If systolic pressure exceeds 160mmHg, contact your physician immediately.
+                </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Sidebar Actions & Trust -->
+<aside class="lg:col-span-4 space-y-8">
+<!-- Primary Actions Card -->
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-xl shadow-primary-container/5 space-y-4 border border-surface-container-high">
+<button class="w-full bg-primary-container text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:opacity-95 transition-all shadow-lg shadow-primary-container/20">
+<span class="material-symbols-outlined">share</span>
+              Share this with your caring doctor
+            </button>
+<button class="w-full bg-surface-container-high text-on-surface py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-secondary-container transition-all">
+<span class="material-symbols-outlined">download</span>
+              Save Full Report
+            </button>
+</div>
+<!-- Secondary Actions -->
+<div class="space-y-3">
+<a class="flex items-center justify-between p-4 bg-surface-container-low border border-surface-container-high rounded-xl hover:bg-surface-container-high transition-all group" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">calendar_today</span>
+<span class="font-semibold">Book a consultation</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:translate-x-1 transition-transform">chevron_right</span>
+</a>
+<a class="flex items-center justify-between p-4 bg-surface-container-low border border-surface-container-high rounded-xl hover:bg-surface-container-high transition-all group" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">local_pharmacy</span>
+<span class="font-semibold">Find a local pharmacy</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:translate-x-1 transition-transform">chevron_right</span>
+</a>
+</div>
+<!-- Trust Signals -->
+<div class="bg-gradient-to-br from-primary to-primary-container rounded-xl p-6 text-white overflow-hidden relative shadow-lg">
+<div class="relative z-10 space-y-6">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+</div>
+<div>
+<p class="text-[0.75rem] font-bold uppercase tracking-widest opacity-80">HIPAA Compliant</p>
+<p class="text-sm font-semibold">Military-grade encryption</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">medical_information</span>
+</div>
+<div>
+<p class="text-[0.75rem] font-bold uppercase tracking-widest opacity-80">Expert Verified</p>
+<p class="text-sm font-semibold">Pharmacist review stamp</p>
+</div>
+</div>
+</div>
+<!-- Aesthetic abstract pattern -->
+<div class="absolute -bottom-8 -right-8 opacity-20">
+<span class="material-symbols-outlined text-[120px]">health_and_safety</span>
+</div>
+</div>
+</aside>
+</div>
+<!-- Contextual Illustration/Visual Aid -->
+<section class="mt-12 rounded-xl overflow-hidden bg-surface-container-high h-[400px] relative border border-surface-container-high shadow-inner">
+<img alt="Warm clinical setting" class="w-full h-full object-cover mix-blend-multiply opacity-60" data-alt="Modern doctor's office with warm natural light, soft mint colored chairs, and organized medical journals on a wooden desk" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAe0tNqEgfRYh9k4Rfyyc7C3lb3-BUqwc1gjYYUtVjg8UWrQ9QLQIpN4vwhWskBEe67tVjabEypkokKA_mlKqkFHGv7HxEIziA4EscCUsMk-KsuslvbJj-qQNf0smrVgwZ9ZQKBsMgZ1oS1ROvaPQogNsnJ6_RLTYUDwh4HiylDAy3hWxd3oswqR9bOY3KuF1y83bNhX4UyCzpk8RCV0W9cASErFOKTEcN8QI2WaWZcn98ILY9yWT8_LfjdlEN_XGOOLXBdBX_dUjCe"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface via-surface/40 to-transparent"></div>
+<div class="absolute bottom-8 left-8 right-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div class="max-w-xl">
+<h3 class="text-[1.75rem] font-extrabold text-on-surface mb-2">Still have questions?</h3>
+<p class="text-on-surface-variant font-medium">Our clinical team is available 24/7 for a quick chat to clarify these recommendations and ensure your safety.</p>
+</div>
+<button class="bg-white text-primary px-8 py-4 rounded-xl font-extrabold shadow-xl hover:shadow-2xl transition-all whitespace-nowrap active:scale-95 border-b-4 border-primary/20">
+            Chat with a Pharmacist
+          </button>
+</div>
+</section>
+</div>
+</main>
+<!-- Bottom Navigation (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full bg-surface-container-lowest border-t border-surface-container-high flex justify-around py-3 z-50">
+<button class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="text-[10px] font-bold uppercase">Home</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-on-surface-variant/60">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-[10px] font-bold uppercase">Results</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-on-surface-variant/60">
+<span class="material-symbols-outlined">medical_services</span>
+<span class="text-[10px] font-bold uppercase">Guidance</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-on-surface-variant/60">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="text-[10px] font-bold uppercase">Profile</span>
+</button>
+</nav>
+</body></html>
