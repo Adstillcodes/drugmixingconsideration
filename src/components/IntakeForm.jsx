@@ -312,40 +312,40 @@ export default function IntakeForm() {
         </div>
       </div>
 
-      <section className="max-w-4xl mx-auto mb-12">
-        <div className="relative overflow-hidden rounded-[2.5rem] h-[320px] flex items-center px-12 bg-primary">
+      <section className="max-w-4xl mx-auto mb-8 md:mb-12">
+        <div className="relative overflow-hidden rounded-[1.5rem] md:rounded-[2.5rem] h-[200px] md:h-[280px] lg:h-[320px] flex items-center px-6 md:px-12 bg-primary">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/80 to-primary/60" />
           <div className="relative z-10 max-w-lg">
-            <h1 className="text-white text-5xl font-bold tracking-tight mb-4 leading-[1.1]">
+            <h1 className="text-white text-2xl md:text-3xl lg:text-5xl font-bold tracking-tight mb-2 md:mb-4 leading-[1.1]">
               {t('intake.hero.title')}
             </h1>
-            <p className="text-white/90 text-lg leading-relaxed font-light">
+            <p className="text-white/90 text-sm md:text-base lg:text-lg leading-relaxed font-light hidden sm:block">
               {t('intake.hero.subtitle')}
             </p>
           </div>
         </div>
       </section>
 
-      <div className="max-w-3xl mx-auto space-y-8">
-        <div className="flex justify-between items-center px-4">
-          <div className="flex items-center gap-2">
-            <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">1</span>
-            <span className="text-sm font-semibold text-primary">{t('intake.prescriptionType.label')}</span>
+      <div className="max-w-3xl mx-auto space-y-6 md:space-y-8">
+        <div className="flex justify-between items-center px-2 md:px-4">
+          <div className="flex items-center gap-1 md:gap-2">
+            <span className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs md:text-sm">1</span>
+            <span className="text-xs md:text-sm font-semibold text-primary hidden sm:inline">{t('intake.prescriptionType.label')}</span>
           </div>
-          <div className="h-px flex-1 mx-4 bg-outline-variant" />
-          <div className="flex items-center gap-2 opacity-40">
-            <span className="w-8 h-8 rounded-full bg-surface-container-high text-on-surface flex items-center justify-center font-bold text-sm">2</span>
-            <span className="text-sm font-medium">{t('intake.demographics.label')}</span>
+          <div className="h-px flex-1 mx-2 md:mx-4 bg-outline-variant" />
+          <div className="flex items-center gap-1 md:gap-2 opacity-40">
+            <span className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-surface-container-high text-on-surface flex items-center justify-center font-bold text-xs md:text-sm">2</span>
+            <span className="text-xs md:text-sm font-medium hidden sm:inline">{t('intake.demographics.label')}</span>
           </div>
-          <div className="h-px flex-1 mx-4 bg-outline-variant" />
-          <div className="flex items-center gap-2 opacity-40">
-            <span className="w-8 h-8 rounded-full bg-surface-container-high text-on-surface flex items-center justify-center font-bold text-sm">3</span>
-            <span className="text-sm font-medium">{t('intake.medications.label')}</span>
+          <div className="h-px flex-1 mx-2 md:mx-4 bg-outline-variant" />
+          <div className="flex items-center gap-1 md:gap-2 opacity-40">
+            <span className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-surface-container-high text-on-surface flex items-center justify-center font-bold text-xs md:text-sm">3</span>
+            <span className="text-xs md:text-sm font-medium hidden sm:inline">{t('intake.medications.label')}</span>
           </div>
         </div>
 
-        <div className="bg-surface-container-lowest rounded-[24px] p-10 shadow-xl border border-surface-container-high">
-          <form className="space-y-12" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+        <div className="bg-surface-container-lowest rounded-[24px] p-4 md:p-6 lg:p-10 shadow-xl border border-surface-container-high">
+          <form className="space-y-6 md:space-y-8 lg:space-y-12" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
             <div className="space-y-4">
               <label className="block text-xs font-bold text-on-surface/50 uppercase tracking-widest">
                 {t('intake.prescriptionType.label')}
@@ -385,11 +385,11 @@ export default function IntakeForm() {
                   shield
                 </span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 lg:gap-8">
                 <div className="space-y-2">
                   <span className="text-on-surface font-semibold block text-sm">{t('intake.demographics.gender')}</span>
                   <select
-                    className="w-full bg-surface-container-low border border-surface-container-high rounded-xl py-4 px-5 text-lg focus:ring-2 focus:ring-primary/20 transition-all outline-none appearance-none cursor-pointer"
+                    className="w-full bg-surface-container-low border border-surface-container-high rounded-xl py-3 md:py-4 px-4 md:px-5 text-base md:text-lg focus:ring-2 focus:ring-primary/20 transition-all outline-none appearance-none cursor-pointer"
                     value={userData.gender}
                     onChange={(e) => updateUserData({ gender: e.target.value })}
                   >
@@ -402,7 +402,7 @@ export default function IntakeForm() {
                 <div className="space-y-2">
                   <span className="text-on-surface font-semibold block text-sm">{t('intake.demographics.age')}</span>
                   <input
-                    className="w-full bg-surface-container-low border border-surface-container-high rounded-xl py-4 px-5 text-lg focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                    className="w-full bg-surface-container-low border border-surface-container-high rounded-xl py-3 md:py-4 px-4 md:px-5 text-base md:text-lg focus:ring-2 focus:ring-primary/20 transition-all outline-none"
                     placeholder={t('intake.demographics.agePlaceholder')}
                     type="number"
                     min="1"
@@ -413,18 +413,18 @@ export default function IntakeForm() {
                 </div>
 
                 {userData.gender === 'female' && (
-                  <div className="md:col-span-2 p-6 bg-secondary-container/30 rounded-2xl border border-secondary-container/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <span className="material-symbols-outlined text-on-secondary-container text-3xl" data-icon="pregnant_woman">pregnant_woman</span>
+                  <div className="md:col-span-2 p-4 md:p-6 bg-secondary-container/30 rounded-2xl border border-secondary-container/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <span className="material-symbols-outlined text-on-secondary-container text-2xl md:text-3xl" data-icon="pregnant_woman">pregnant_woman</span>
                       <div>
-                        <p className="font-bold text-on-secondary-container">{t('intake.demographics.pregnant.title')}</p>
-                        <p className="text-sm text-on-secondary-container/70">{t('intake.demographics.pregnant.subtitle')}</p>
+                        <p className="font-bold text-on-secondary-container text-sm md:text-base">{t('intake.demographics.pregnant.title')}</p>
+                        <p className="text-xs md:text-sm text-on-secondary-container/70 hidden sm:block">{t('intake.demographics.pregnant.subtitle')}</p>
                       </div>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex gap-2 md:gap-3 w-full sm:w-auto">
                       <button
                         type="button"
-                        className={`px-8 py-2.5 rounded-full font-bold transition-all ${
+                        className={`flex-1 sm:flex-none px-4 md:px-8 py-2.5 rounded-full font-bold transition-all ${
                           userData.pregnant === true
                             ? 'bg-primary text-white shadow-md'
                             : 'bg-white text-on-secondary-container border border-secondary-container shadow-sm'
@@ -435,7 +435,7 @@ export default function IntakeForm() {
                       </button>
                       <button
                         type="button"
-                        className={`px-8 py-2.5 rounded-full font-bold transition-all ${
+                        className={`flex-1 sm:flex-none px-4 md:px-8 py-2.5 rounded-full font-bold transition-all ${
                           userData.pregnant === false
                             ? 'bg-primary text-white shadow-md'
                             : 'bg-white text-on-secondary-container border border-secondary-container shadow-sm'
@@ -449,18 +449,18 @@ export default function IntakeForm() {
                 )}
 
                 {userData.gender === 'female' && (
-                  <div className="md:col-span-2 p-6 bg-secondary-container/30 rounded-2xl border border-secondary-container/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <span className="material-symbols-outlined text-on-secondary-container text-3xl" data-icon="child_friendly">child_friendly</span>
+                  <div className="md:col-span-2 p-4 md:p-6 bg-secondary-container/30 rounded-2xl border border-secondary-container/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <span className="material-symbols-outlined text-on-secondary-container text-2xl md:text-3xl" data-icon="child_friendly">child_friendly</span>
                       <div>
-                        <p className="font-bold text-on-secondary-container">{t('intake.demographics.lactating.title')}</p>
-                        <p className="text-sm text-on-secondary-container/70">{t('intake.demographics.lactating.subtitle')}</p>
+                        <p className="font-bold text-on-secondary-container text-sm md:text-base">{t('intake.demographics.lactating.title')}</p>
+                        <p className="text-xs md:text-sm text-on-secondary-container/70 hidden sm:block">{t('intake.demographics.lactating.subtitle')}</p>
                       </div>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex gap-2 md:gap-3 w-full sm:w-auto">
                       <button
                         type="button"
-                        className={`px-8 py-2.5 rounded-full font-bold transition-all ${
+                        className={`flex-1 sm:flex-none px-4 md:px-8 py-2.5 rounded-full font-bold transition-all ${
                           userData.lactating === true
                             ? 'bg-primary text-white shadow-md'
                             : 'bg-white text-on-secondary-container border border-secondary-container shadow-sm'
@@ -471,7 +471,7 @@ export default function IntakeForm() {
                       </button>
                       <button
                         type="button"
-                        className={`px-8 py-2.5 rounded-full font-bold transition-all ${
+                        className={`flex-1 sm:flex-none px-4 md:px-8 py-2.5 rounded-full font-bold transition-all ${
                           userData.lactating === false
                             ? 'bg-primary text-white shadow-md'
                             : 'bg-white text-on-secondary-container border border-secondary-container shadow-sm'
@@ -497,9 +497,9 @@ export default function IntakeForm() {
               </div>
 
               <div className="relative">
-                <span className="absolute left-5 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface/40" data-icon="search">search</span>
+                <span className="absolute left-4 md:left-5 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface/40 text-lg md:text-xl" data-icon="search">search</span>
                 <input
-                  className="w-full bg-surface-container-low border border-surface-container-high rounded-2xl py-5 pl-14 pr-5 text-lg focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                  className="w-full bg-surface-container-low border border-surface-container-high rounded-2xl py-3 md:py-4 lg:py-5 pl-12 md:pl-14 pr-4 md:pr-5 text-base md:text-lg focus:ring-2 focus:ring-primary/20 transition-all outline-none"
                   placeholder={t('intake.medications.searchPlaceholder')}
                   type="text"
                   value={drugSearch}
@@ -534,19 +534,19 @@ export default function IntakeForm() {
                 )}
               </div>
 
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-2 sm:gap-3">
                 {editableMedications.map((med) => (
                   <div
                     key={med.id || med.name}
-                    className={`bg-secondary-container text-on-secondary-container px-4 py-2.5 rounded-full flex items-center gap-2 font-medium text-sm border border-secondary-container/50 max-w-full ${
+                    className={`bg-secondary-container text-on-secondary-container px-3 sm:px-4 py-1.5 sm:py-2.5 rounded-full flex items-center gap-1.5 sm:gap-2 font-medium text-xs sm:text-sm border border-secondary-container/50 max-w-full ${
                       med.requiresDosage && (!med.dosage || med.dosage.trim() === '') ? 'ring-2 ring-error' : ''
                     }`}
                   >
-                    <span className="font-semibold whitespace-nowrap truncate max-w-[120px]" title={formatDrugName(med.name)}>{formatDrugName(med.name)}</span>
+                    <span className="font-semibold whitespace-nowrap truncate max-w-[80px] sm:max-w-[120px]" title={formatDrugName(med.name)}>{formatDrugName(med.name)}</span>
 
                     {editingDosage === med.name ? (
                       <select
-                        className="bg-white/90 border border-secondary-container/50 rounded px-2 py-1 text-sm min-w-[80px]"
+                        className="bg-white/90 border border-secondary-container/50 rounded px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs sm:text-sm min-w-[60px] sm:min-w-[80px]"
                         value={med.dosage || ''}
                         onChange={(e) => handleDosageChange(med.name, e.target.value)}
                         onBlur={() => setEditingDosage(null)}
@@ -573,7 +573,7 @@ export default function IntakeForm() {
 
                     {editingTiming === med.name ? (
                       <select
-                        className="bg-white/90 border border-secondary-container/50 rounded px-2 py-1 text-sm min-w-[100px]"
+                        className="bg-white/90 border border-secondary-container/50 rounded px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs sm:text-sm min-w-[70px] sm:min-w-[100px]"
                         value={med.timing || ''}
                         onChange={(e) => handleTimingChange(med.name, e.target.value)}
                         onBlur={() => setEditingTiming(null)}
@@ -599,7 +599,7 @@ export default function IntakeForm() {
 
                     <button
                       type="button"
-                      className="material-symbols-outlined text-[18px] cursor-pointer hover:text-red-600 flex-shrink-0"
+                      className="material-symbols-outlined text-[18px] cursor-pointer hover:text-red-600 flex-shrink-0 p-1"
                       onClick={() => handleRemoveDrug(med.name)}
                     >
                       close
@@ -608,7 +608,7 @@ export default function IntakeForm() {
                 ))}
                 <button
                   type="button"
-                  className="text-primary font-bold text-sm py-2 px-4 hover:bg-primary/5 rounded-full transition-all"
+                  className="text-primary font-bold text-xs sm:text-sm py-2 px-3 sm:px-4 hover:bg-primary/5 rounded-full transition-all"
                   onClick={() => document.querySelector('input[placeholder*="drug name"]')?.focus()}
                 >
                   + {t('intake.medications.addMedication')}
@@ -616,8 +616,8 @@ export default function IntakeForm() {
               </div>
 
               {userData.prescriptionType === 'self' && (
-                <div className="bg-tertiary/10 rounded-xl p-4 border border-tertiary/20">
-                  <p className="text-sm text-on-surface/70">
+                <div className="bg-tertiary/10 rounded-xl p-3 sm:p-4 border border-tertiary/20">
+                  <p className="text-xs sm:text-sm text-on-surface/70">
                     <span className="material-symbols-outlined text-tertiary text-sm align-middle mr-1">info</span>
                     Please enter the dosage for each medication. You can select from common dosages or enter a custom value.
                   </p>
@@ -625,14 +625,14 @@ export default function IntakeForm() {
               )}
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <label className="block text-xs font-bold text-on-surface/50 uppercase tracking-widest">
                 {t('intake.conditions.label')}
               </label>
               <div className="relative">
-                <span className="absolute left-5 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface/40" data-icon="medical_information">medical_information</span>
+                <span className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface/40" data-icon="medical_information">medical_information</span>
                 <input
-                  className="w-full bg-surface-container-low border border-surface-container-high rounded-2xl py-5 pl-14 pr-5 text-lg focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                  className="w-full bg-surface-container-low border border-surface-container-high rounded-2xl py-3 sm:py-5 pl-12 sm:pl-14 pr-4 sm:pr-5 text-base sm:text-lg focus:ring-2 focus:ring-primary/20 transition-all outline-none"
                   placeholder={t('intake.conditions.searchPlaceholder')}
                   type="text"
                   value={conditionSearch}
@@ -659,16 +659,16 @@ export default function IntakeForm() {
                 )}
               </div>
 
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-2 sm:gap-3">
                 {editableConditions.map((condition) => (
                   <div
                     key={condition}
-                    className="bg-primary-container/20 text-on-surface px-4 py-2.5 rounded-full flex items-center gap-2 font-semibold text-sm border border-primary-container/30"
+                    className="bg-primary-container/20 text-on-surface px-3 sm:px-4 py-1.5 sm:py-2.5 rounded-full flex items-center gap-1.5 sm:gap-2 font-semibold text-xs sm:text-sm border border-primary-container/30"
                   >
                     {condition}
                     <button
                       type="button"
-                      className="material-symbols-outlined text-[18px] cursor-pointer hover:text-red-600"
+                      className="material-symbols-outlined text-[16px] sm:text-[18px] cursor-pointer hover:text-red-600 p-0.5 sm:p-0"
                       onClick={() => handleRemoveCondition(condition)}
                     >
                       close
@@ -678,12 +678,12 @@ export default function IntakeForm() {
               </div>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <label className="block text-xs font-bold text-on-surface/50 uppercase tracking-widest flex items-center gap-2">
                 {userData.prescriptionType === 'prescription' ? t('intake.upload.labelRequired') : t('intake.upload.labelOptional')}
               </label>
               <div
-                className="border-2 border-dashed border-primary-container/30 rounded-3xl p-10 flex flex-col items-center justify-center text-center hover:bg-surface-container-low transition-all cursor-pointer group"
+                className="border-2 border-dashed border-primary-container/30 rounded-2xl sm:rounded-3xl p-6 sm:p-10 flex flex-col items-center justify-center text-center hover:bg-surface-container-low transition-all cursor-pointer group"
                 onClick={() => fileInputRef.current?.click()}
               >
                 <input
@@ -693,17 +693,17 @@ export default function IntakeForm() {
                   className="hidden"
                   onChange={handleFileUpload}
                 />
-                <div className="w-16 h-16 bg-primary-container/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-primary-container/10 rounded-full flex items-center justify-center mb-3 sm:mb-4 group-hover:scale-110 transition-transform">
                   {isProcessingPrescription ? (
-                    <span className="material-symbols-outlined text-primary text-3xl animate-spin">progress_activity</span>
+                    <span className="material-symbols-outlined text-primary text-2xl sm:text-3xl animate-spin">progress_activity</span>
                   ) : (
-                    <span className="material-symbols-outlined text-primary text-3xl" data-icon="add_a_photo">add_a_photo</span>
+                    <span className="material-symbols-outlined text-primary text-2xl sm:text-3xl" data-icon="add_a_photo">add_a_photo</span>
                   )}
                 </div>
                 {isProcessingPrescription ? (
                   <div>
-                    <h3 className="text-on-surface font-bold text-lg">{t('intake.upload.processing')}</h3>
-                    <p className="text-primary mt-1 max-w-[280px]">{prescriptionProcessingStatus}</p>
+                    <h3 className="text-on-surface font-bold text-base sm:text-lg">{t('intake.upload.processing')}</h3>
+                    <p className="text-primary mt-1 max-w-[280px] text-sm">{prescriptionProcessingStatus}</p>
                     <div className="mt-4 w-48 mx-auto h-2 bg-surface-container-high rounded-full overflow-hidden">
                       <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
                     </div>
@@ -712,17 +712,17 @@ export default function IntakeForm() {
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <span className="material-symbols-outlined text-success" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                      <h3 className="text-on-surface font-bold text-lg">{uploadedFile.name}</h3>
+                      <h3 className="text-on-surface font-bold text-base sm:text-lg">{uploadedFile.name}</h3>
                     </div>
-                    <p className="text-on-surface/60 mt-1 max-w-[280px]">
+                    <p className="text-on-surface/60 mt-1 max-w-[280px] text-xs sm:text-sm">
                       {prescriptionProcessingStatus || t('intake.upload.subtitle')}
                     </p>
                   </div>
                 ) : (
                   <div>
-                    <h3 className="text-on-surface font-bold text-lg">{t('intake.upload.title')}</h3>
-                    <p className="text-on-surface/60 mt-1 max-w-[280px]">{t('intake.upload.subtitle')}</p>
-                    <span className="mt-4 px-8 py-2.5 bg-primary-container text-white font-bold rounded-xl text-sm shadow-sm inline-block">
+                    <h3 className="text-on-surface font-bold text-base sm:text-lg">{t('intake.upload.title')}</h3>
+                    <p className="text-on-surface/60 mt-1 max-w-[280px] text-xs sm:text-sm">{t('intake.upload.subtitle')}</p>
+                    <span className="mt-3 sm:mt-4 px-6 sm:px-8 py-2 sm:py-2.5 bg-primary-container text-white font-bold rounded-xl text-xs sm:text-sm shadow-sm inline-block">
                       {t('intake.upload.chooseFile')}
                     </span>
                   </div>
@@ -730,29 +730,29 @@ export default function IntakeForm() {
               </div>
 
               {extractedMedications.length > 0 && (
-                <div className="bg-surface-container-low rounded-2xl p-4 border border-surface-container-high">
-                  <div className="flex items-center gap-2 mb-3">
+                <div className="bg-surface-container-low rounded-2xl p-3 sm:p-4 border border-surface-container-high">
+                  <div className="flex items-center gap-2 mb-2 sm:mb-3">
                     <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
-                    <span className="font-bold text-on-surface">{t('intake.upload.aiExtracted')}</span>
+                    <span className="font-bold text-on-surface text-sm sm:text-base">{t('intake.upload.aiExtracted')}</span>
                   </div>
-                  <p className="text-sm text-on-surface-variant mb-3">
+                  <p className="text-xs sm:text-sm text-on-surface-variant mb-2 sm:mb-3">
                     {t('intake.upload.aiExtractedSubtitle')}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {extractedMedications.map((med) => (
                       <span
                         key={med.name}
-                        className="bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2 max-w-full"
+                        className="bg-primary/10 text-primary px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2 max-w-full"
                       >
                         <span className="material-symbols-outlined text-xs flex-shrink-0">medication</span>
                         <span className="truncate" title={formatDrugName(med.name)}>{formatDrugName(med.name)}</span>
                         {med.dosage && med.dosage !== 'Not specified' && (
-                          <span className="text-xs opacity-70 whitespace-nowrap">{med.dosage}</span>
+                          <span className="text-xs opacity-70 whitespace-nowrap hidden sm:inline">{med.dosage}</span>
                         )}
                         <button
                           type="button"
                           onClick={() => handleRemoveExtractedMed(med.name)}
-                          className="material-symbols-outlined text-[14px] hover:text-error flex-shrink-0"
+                          className="material-symbols-outlined text-[12px] sm:text-[14px] hover:text-error flex-shrink-0 p-0.5"
                         >
                           close
                         </button>
@@ -763,10 +763,10 @@ export default function IntakeForm() {
               )}
             </div>
 
-            <div className="pt-8">
+            <div className="pt-4 sm:pt-8">
               <button
                 type="submit"
-                className={`w-full py-6 rounded-[2rem] text-2xl font-bold shadow-lg transition-all animate-soft-pulse ${
+                className={`w-full py-4 sm:py-6 rounded-[2rem] text-lg sm:text-2xl font-bold shadow-lg transition-all animate-soft-pulse ${
                   isFormValid
                     ? 'bg-primary text-white shadow-primary/30 hover:shadow-xl hover:-translate-y-1 active:translate-y-0.5'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -777,8 +777,8 @@ export default function IntakeForm() {
                   ? t('intake.submit.uploadToContinue')
                   : t('intake.submit.runAnalysis')}
               </button>
-              <p className="text-center text-on-surface/40 text-sm mt-6 flex items-center justify-center gap-2">
-                <span className="material-symbols-outlined text-[16px] text-primary" data-icon="lock" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
+              <p className="text-center text-on-surface/40 text-xs sm:text-sm mt-4 sm:mt-6 flex items-center justify-center gap-2">
+                <span className="material-symbols-outlined text-[14px] sm:text-[16px] text-primary" data-icon="lock" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
                 {t('intake.submit.privacyNote')}
               </p>
             </div>
