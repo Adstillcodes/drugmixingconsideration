@@ -56,6 +56,33 @@ function extractTimingFromContext(text, drugName) {
   return null;
 }
 
+function cleanDrugName(rawName) {
+  if (!rawName) return '';
+  
+  let cleaned = rawName.trim();
+  
+  cleaned = cleaned.replace(/^\d+\s*\(|\)\s*\/\s*\d+.*$/g, '');
+  cleaned = cleaned.replace(/\d+\s*\(.*?\)\s*/g, '');
+  cleaned = cleaned.replace(/\(\s*Pack\s*\[.*?\]/gi, '');
+  cleaned = cleaned.replace(/\[.*?\]/g, '');
+  cleaned = cleaned.replace(/\d+(?:\.\d+)?\s*(?:MG|Mcg|ML|G|IU|MEQ|%)[^\s]*/gi, '');
+  cleaned = cleaned.replace(/\s*(?:Oral|Tablet|Capsule|Injection|Solution|Cream|Patch|mg|ml)\b/gi, '');
+  cleaned = cleaned.replace(/\s*\/\s*/g, '/');
+  cleaned = cleaned.replace(/\s+/g, ' ');
+  
+  const parts = cleaned.split('/').map(p => p.trim()).filter(p => p && p.length > 1);
+  if (parts.length > 0) {
+    cleaned = parts[0];
+  }
+  
+  cleaned = cleaned
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+  
+  return cleaned.trim();
+}
+
 export async function extractMedicationsFromText(text) {
   const textLower = text.toLowerCase();
   const foundDrugs = [];
@@ -84,20 +111,29 @@ export async function extractMedicationsFromText(text) {
   }
 
   try {
-    const systemPrompt = `Extract medication names from prescription text. Return valid JSON array:
-[{"name": "DrugName", "dosage": "dosage if found or 'Not specified'", "timing": "time of day if mentioned or empty string", "category": "category"}]
+    const systemPrompt = `You are a medical prescription parser. Extract ONLY the clean drug names from prescription text.
 
-Common timing values: "06:00", "07:00", "08:00", "09:00", "12:00", "18:00", "20:00", "21:00", "Before breakfast", "After breakfast", "Before lunch", "After lunch", "Before dinner", "After dinner", "At bedtime", "Morning", "Afternoon", "Evening", "Night"
+IMPORTANT RULES:
+1. Return ONLY the main drug name, nothing else
+2. For combination drugs (like "Acetaminophen/Aspirin/Caffeine"), return "Acetaminophen" only
+3. DO NOT include: dosages, mg, mg amounts, tablet, capsule, oral, pack, brand names in brackets
+4. DO NOT include prescription numbers, patient info, or addresses
+5. Proper Title Case: "Acetaminophen", NOT "ACETAMINOPHEN" or "acetaminophen"
+6. If the text has "100 (acetaminophen 250 MG / aspirin 250 MG)", return just: Acetaminophen
 
-Rules:
-- Only actual medication/drug names
-- Include dosage if mentioned (e.g., "500mg", "10mg", "twice daily")
-- Include timing/schedule if mentioned (e.g., "in the morning", "twice daily", "at bedtime")
-- Proper capitalization for drug names
-- Do NOT include patient/doctor names or addresses
-- Return ONLY valid JSON array, no markdown`;
+Examples:
+- Input: "100 (acetaminophen 250 MG / aspirin 250 MG / caffeine 65 MG Oral Tablet [Excedrin])" → Output: Acetaminophen
+- Input: "Lisinopril 10mg once daily" → Output: Lisinopril
+- Input: "Metformin 500mg twice daily with food" → Output: Metformin
 
-    const userPrompt = `Extract medications from:\n${text.substring(0, 3000)}\n\nReturn JSON array with name, dosage, timing, and category for each medication.`;
+Return valid JSON array only:
+[{"name": "CleanDrugName", "dosage": "dosage if clearly stated like '500mg' or 'Not specified'", "timing": "time/schedule if mentioned or empty string", "category": "General"}]
+
+Common drug names to look for: metformin, lisinopril, atorvastatin, amlodipine, omeprazole, aspirin, ibuprofen, amoxicillin, metformin, warfarin, etc.
+
+Return ONLY valid JSON array, no explanations, no markdown formatting.`;
+
+    const userPrompt = `Extract clean medication names from this prescription:\n\n${text.substring(0, 2000)}\n\nReturn JSON array with cleaned drug names only.`;
 
     const groq = getGroqClient();
     if (!groq) {
@@ -122,15 +158,18 @@ Rules:
         const groqDrugs = JSON.parse(jsonMatch[0]);
 
         for (const drug of groqDrugs) {
-          if (drug.name && !seen.has(drug.name.toLowerCase())) {
-            seen.add(drug.name.toLowerCase());
-            foundDrugs.push({
-              name: drug.name,
-              dosage: drug.dosage || 'Not specified',
-              timing: drug.timing || '',
-              category: drug.category || 'Extracted',
-              confidence: 'high',
-            });
+          if (drug.name) {
+            const cleanedName = cleanDrugName(drug.name);
+            if (cleanedName && !seen.has(cleanedName.toLowerCase())) {
+              seen.add(cleanedName.toLowerCase());
+              foundDrugs.push({
+                name: cleanedName,
+                dosage: drug.dosage || 'Not specified',
+                timing: drug.timing || '',
+                category: drug.category || 'Extracted',
+                confidence: 'high',
+              });
+            }
           }
         }
       } catch (e) {
