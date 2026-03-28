@@ -7,6 +7,7 @@ import ProcessingScreen from './components/ProcessingScreen';
 import ResultsDashboard from './components/ResultsDashboard';
 import InteractionDeepDive from './components/InteractionDeepDive';
 import Recommendations from './components/Recommendations';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 
 function AppContent() {
   const { currentScreen } = useApp();
@@ -23,6 +24,8 @@ function AppContent() {
         return <InteractionDeepDive />;
       case 'recommendations':
         return <Recommendations />;
+      case 'privacy':
+        return <PrivacyPolicy />;
       default:
         return <IntakeForm />;
     }

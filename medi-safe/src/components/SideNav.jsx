@@ -44,8 +44,12 @@ export default function SideNav() {
         </button>
       </div>
       <div className="p-4 border-t border-surface-container-high mt-auto">
-        <div className="text-on-surface/70 py-2 px-2 flex items-center gap-3 cursor-pointer hover:bg-surface-container-high rounded-lg transition-all">
-          
+        <div 
+          className="text-on-surface/70 py-2 px-2 flex items-center gap-3 cursor-pointer hover:bg-surface-container-high rounded-lg transition-all"
+          onClick={() => setCurrentScreen('privacy')}
+        >
+          <span className="material-symbols-outlined text-sm">privacy_tip</span>
+          <span className="text-xs font-medium">Privacy Policy</span>
         </div>
         <div className="text-on-surface/70 py-2 px-2 flex items-center gap-3 cursor-pointer hover:bg-surface-container-high rounded-lg transition-all">
           
