@@ -18,6 +18,35 @@ function formatDrugName(name) {
     .join(' ');
 }
 
+function parseExtractedDrugName(rawText) {
+  if (!rawText) return { name: '', dosage: '', form: '', brand: '' };
+  
+  const cleanedText = rawText.trim();
+  
+  const dosageMatch = cleanedText.match(/(\d+(?:\.\d+)?\s*(?:MG|ML|MCG|G))/i);
+  const dosage = dosageMatch ? dosageMatch[1].toUpperCase() : '';
+  
+  let drugName = cleanedText
+    .replace(/\d+\s*\(/g, '')
+    .replace(/\)\s*\/\s*\d+/g, '/')
+    .replace(/\(\s*Pack\s*\[.*?\]/gi, '')
+    .replace(/\[.*?\]/g, '')
+    .replace(/\d+(?:\.\d+)?\s*(?:MG|ML|MCG|G)[^\s]*/gi, '')
+    .replace(/\s*(?:Oral|Tablet|Capsule|Injection|Solution|Cream|Patch)/gi, '')
+    .replace(/\s*\/\s*/g, '/')
+    .replace(/\s+/g, ' ')
+    .trim();
+  
+  const nameParts = drugName.split('/').map(p => p.trim()).filter(p => p);
+  if (nameParts.length > 0) {
+    drugName = nameParts[0];
+  }
+  
+  drugName = formatDrugName(drugName);
+  
+  return { name: drugName, dosage, form: '', brand: '' };
+}
+
 const commonDosages = [
   '10mg', '20mg', '25mg', '50mg', '100mg', '200mg', '500mg',
   '1mg', '5mg', '0.5mg', '0.25mg',
@@ -116,11 +145,13 @@ export default function IntakeForm() {
   }, [userData.prescriptionType]);
 
   const handleAddExtractedDrug = useCallback((drug) => {
+    const parsed = parseExtractedDrugName(drug.name);
+    
     const newMed = {
-      name: drug.name,
-      dosage: drug.dosage && drug.dosage !== 'Not specified' ? drug.dosage : 'As prescribed',
+      name: parsed.name || formatDrugName(drug.name),
+      dosage: drug.dosage && drug.dosage !== 'Not specified' ? drug.dosage : (parsed.dosage || 'As prescribed'),
       timing: drug.timing || '',
-      category: drug.category,
+      category: drug.category || parsed.brand || 'Medication',
       id: `extracted-${Date.now()}-${Math.random()}`,
       source: 'prescription',
       fromOCR: true,
@@ -711,17 +742,17 @@ export default function IntakeForm() {
                     {extractedMedications.map((med) => (
                       <span
                         key={med.name}
-                        className="bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2"
+                        className="bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2 max-w-full"
                       >
-                        <span className="material-symbols-outlined text-xs">medication</span>
-                        {med.name}
+                        <span className="material-symbols-outlined text-xs flex-shrink-0">medication</span>
+                        <span className="truncate" title={formatDrugName(med.name)}>{formatDrugName(med.name)}</span>
                         {med.dosage && med.dosage !== 'Not specified' && (
-                          <span className="text-xs opacity-70">{med.dosage}</span>
+                          <span className="text-xs opacity-70 whitespace-nowrap">{med.dosage}</span>
                         )}
                         <button
                           type="button"
                           onClick={() => handleRemoveExtractedMed(med.name)}
-                          className="material-symbols-outlined text-[14px] hover:text-error ml-1"
+                          className="material-symbols-outlined text-[14px] hover:text-error flex-shrink-0"
                         >
                           close
                         </button>
