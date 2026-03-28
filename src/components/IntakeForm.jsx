@@ -9,6 +9,15 @@ const commonConditions = [
   'Depression', 'Anxiety', 'Arthritis'
 ];
 
+function formatDrugName(name) {
+  if (!name) return '';
+  return name
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
 const commonDosages = [
   '10mg', '20mg', '25mg', '50mg', '100mg', '200mg', '500mg',
   '1mg', '5mg', '0.5mg', '0.25mg',
@@ -479,14 +488,14 @@ export default function IntakeForm() {
                       drugSearchResults.map((drug) => (
                         <div
                           key={drug.name}
-                          className="px-5 py-3 hover:bg-surface-container-low cursor-pointer flex justify-between items-center"
-                          onClick={() => handleAddDrug(drug)}
+                          className="px-5 py-3 hover:bg-surface-container-low cursor-pointer flex justify-between items-center gap-3"
+                          onClick={() => handleAddDrug({ ...drug, name: formatDrugName(drug.name) })}
                         >
-                          <div>
-                            <span className="font-semibold text-on-surface">{drug.name}</span>
-                            <span className="text-sm text-on-surface/60 ml-2">{drug.category}</span>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-semibold text-on-surface block truncate">{formatDrugName(drug.name)}</span>
+                            <span className="text-sm text-on-surface/60">{drug.category}</span>
                           </div>
-                          <span className="text-sm text-primary font-medium">{drug.class}</span>
+                          <span className="text-sm text-primary font-medium whitespace-nowrap bg-primary/10 px-2 py-1 rounded-lg">{drug.class}</span>
                         </div>
                       ))
                     )}
@@ -498,11 +507,11 @@ export default function IntakeForm() {
                 {editableMedications.map((med) => (
                   <div
                     key={med.id || med.name}
-                    className={`bg-secondary-container text-on-secondary-container px-4 py-2.5 rounded-full flex items-center gap-2 font-semibold text-sm border border-secondary-container/50 ${
+                    className={`bg-secondary-container text-on-secondary-container px-4 py-2.5 rounded-full flex items-center gap-2 font-medium text-sm border border-secondary-container/50 max-w-full ${
                       med.requiresDosage && (!med.dosage || med.dosage.trim() === '') ? 'ring-2 ring-error' : ''
                     }`}
                   >
-                    <span className="font-medium">{med.name}</span>
+                    <span className="font-semibold whitespace-nowrap truncate max-w-[120px]" title={formatDrugName(med.name)}>{formatDrugName(med.name)}</span>
 
                     {editingDosage === med.name ? (
                       <select
@@ -520,7 +529,7 @@ export default function IntakeForm() {
                     ) : (
                       <button
                         type="button"
-                        className={`text-sm px-2 py-0.5 rounded transition-colors ${
+                        className={`text-sm px-2 py-0.5 rounded transition-colors whitespace-nowrap ${
                           med.requiresDosage && (!med.dosage || med.dosage.trim() === '')
                             ? 'bg-error/20 text-error font-bold hover:bg-error/30 cursor-pointer'
                             : 'opacity-70 hover:opacity-100 bg-white/20'
@@ -547,7 +556,7 @@ export default function IntakeForm() {
                     ) : (
                       <button
                         type="button"
-                        className={`text-sm px-2 py-0.5 rounded transition-colors ${
+                        className={`text-sm px-2 py-0.5 rounded transition-colors whitespace-nowrap ${
                           med.timing ? 'bg-primary/20 text-primary' : 'opacity-50 hover:opacity-100 bg-white/10'
                         }`}
                         onClick={() => setEditingTiming(med.name)}
@@ -559,7 +568,7 @@ export default function IntakeForm() {
 
                     <button
                       type="button"
-                      className="material-symbols-outlined text-[18px] cursor-pointer hover:text-red-600 ml-1"
+                      className="material-symbols-outlined text-[18px] cursor-pointer hover:text-red-600 flex-shrink-0"
                       onClick={() => handleRemoveDrug(med.name)}
                     >
                       close
