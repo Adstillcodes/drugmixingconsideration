@@ -57,30 +57,44 @@ function extractTimingFromContext(text, drugName) {
 }
 
 function cleanDrugName(rawName) {
-  if (!rawName) return '';
+  if (!rawName || typeof rawName !== 'string') return '';
   
   let cleaned = rawName.trim();
   
-  if (cleaned.includes('/') && cleaned.includes('MG')) {
+  if (cleaned.length > 100) {
+    cleaned = cleaned.substring(0, 100);
+  }
+  
+  if (cleaned.includes('(') && cleaned.includes('MG') && !cleaned.includes(' + ')) {
     const ingredients = [];
-    const ingredientMatches = cleaned.match(/([a-zA-Z]+(?:\s+[a-zA-Z]+)?)\s+\d+(?:\.\d+)?\s*(?:MG|MCG|ML|G)/gi);
+    const ingredientPattern = /([a-zA-Z]+(?:\s+[a-zA-Z]+)?)\s+\d+(?:\.\d+)?\s*(?:MG|MCG|ML|G)\/[A-Z]/gi;
+    const matches = cleaned.match(ingredientPattern);
     
-    if (ingredientMatches) {
-      for (const match of ingredientMatches) {
-        const ingredientName = match.replace(/\d+(?:\.\d+)?\s*(?:MG|MCG|ML|G)/gi, '').trim();
-        if (ingredientName.length > 2) {
-          const capitalized = ingredientName
-            .split(' ')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-            .join(' ');
-          ingredients.push(capitalized);
+    if (!matches) {
+      const simplePattern = /([a-zA-Z]+)\s+\d+(?:\.\d+)?\s*(?:MG|MCG|ML|G)/gi;
+      const simpleMatches = [...cleaned.matchAll(simplePattern)];
+      for (const match of simpleMatches) {
+        const ingredientName = match[1].trim();
+        if (ingredientName.length > 3 && !['pack', 'oral', 'tablet', 'capsule', 'solution'].includes(ingredientName.toLowerCase())) {
+          ingredients.push(ingredientName.charAt(0).toUpperCase() + ingredientName.slice(1).toLowerCase());
         }
       }
-      
-      if (ingredients.length > 0) {
-        return ingredients.slice(0, 3).join(' + ');
-      }
     }
+    
+    if (ingredients.length > 0) {
+      const uniqueIngredients = [...new Set(ingredients)];
+      return uniqueIngredients.slice(0, 3).join(' + ');
+    }
+  }
+  
+  if (cleaned.match(/^\d+\s*\(/) || cleaned.includes('{') || cleaned.includes('Pack')) {
+    cleaned = cleaned
+      .replace(/^\d+\s*\(/, '')
+      .replace(/^\{\d+\s*\(/, '')
+      .replace(/\)\s*\/.*$/, '')
+      .replace(/\s*\}\s*Pack.*$/i, '')
+      .replace(/^\(|\)$/g, '')
+      .trim();
   }
   
   cleaned = cleaned.replace(/^\d+\s*\(|\)\s*\/\s*\d+.*$/g, '');
@@ -93,7 +107,7 @@ function cleanDrugName(rawName) {
   cleaned = cleaned.replace(/\s*\/+\s*/g, ' + ');
   cleaned = cleaned.replace(/\s+/g, ' ');
   
-  const parts = cleaned.split('+').map(p => p.trim()).filter(p => p && p.length > 1);
+  const parts = cleaned.split('+').map(p => p.trim()).filter(p => p && p.length > 1 && p.length < 50);
   if (parts.length > 0) {
     if (parts.length > 3) {
       cleaned = parts.slice(0, 3).join(' + ') + ' + others';
@@ -109,7 +123,29 @@ function cleanDrugName(rawName) {
   
   cleaned = cleaned.replace(/\s+[a-z]\s+/g, ' ');
   
+  if (cleaned.length > 60 || cleaned.match(/\d+\s*\(/) || cleaned.includes('{')) {
+    return '';
+  }
+  
   return cleaned.trim();
+}
+
+function isValidDrugName(name) {
+  if (!name || typeof name !== 'string') return false;
+  
+  const cleaned = name.trim();
+  
+  if (cleaned.length < 2 || cleaned.length > 60) return false;
+  if (cleaned.match(/\d+\s*\(/)) return false;
+  if (cleaned.includes('{') || cleaned.includes('}')) return false;
+  if (cleaned.includes('Pack') && cleaned.length > 20) return false;
+  if (cleaned.match(/\)\s*\/|\/\s*\(/)) return false;
+  if (cleaned.split(/\s+/).length > 8) return false;
+  
+  const hasLetters = /[a-zA-Z]{3,}/.test(cleaned);
+  if (!hasLetters) return false;
+  
+  return true;
 }
 
 export async function extractMedicationsFromText(text) {
@@ -128,13 +164,16 @@ export async function extractMedicationsFromText(text) {
 
         const timing = extractTimingFromContext(text, drug);
 
-        foundDrugs.push({
-          name: drug.charAt(0).toUpperCase() + drug.slice(1),
-          dosage: dosageMatch ? dosageMatch[0].match(dosagePattern)?.[0] || 'Not specified' : 'Not specified',
-          timing: timing || '',
-          category: 'Detected',
-          confidence: 'medium',
-        });
+        const drugName = drug.charAt(0).toUpperCase() + drug.slice(1);
+        if (isValidDrugName(drugName)) {
+          foundDrugs.push({
+            name: drugName,
+            dosage: dosageMatch ? dosageMatch[0].match(dosagePattern)?.[0] || 'Not specified' : 'Not specified',
+            timing: timing || '',
+            category: 'Detected',
+            confidence: 'medium',
+          });
+        }
       }
     }
   }
@@ -196,7 +235,7 @@ Return ONLY valid JSON array, no explanations, no markdown.`;
         for (const drug of groqDrugs) {
           if (drug.name) {
             const cleanedName = cleanDrugName(drug.name);
-            if (cleanedName && !seen.has(cleanedName.toLowerCase())) {
+            if (isValidDrugName(cleanedName) && !seen.has(cleanedName.toLowerCase())) {
               seen.add(cleanedName.toLowerCase());
               foundDrugs.push({
                 name: cleanedName,
