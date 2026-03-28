@@ -1,4 +1,7 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://dose-wise-api.onrender.com/api';
+const isProduction = typeof window !== 'undefined' && window.location.hostname !== 'localhost';
+const API_BASE_URL = isProduction 
+  ? 'https://dose-wise-api.onrender.com/api' 
+  : (import.meta.env.VITE_API_URL || 'http://localhost:3001/api');
 
 export async function analyzeInteractions(medications, userContext) {
   try {
