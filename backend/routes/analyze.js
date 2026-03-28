@@ -1,4 +1,5 @@
 import Groq from 'groq-sdk';
+import { getAlternativesForInteraction, getDrugByName, LOCAL_DRUG_DATABASE } from './drugs.js';
 
 let groqClient = null;
 
@@ -10,6 +11,261 @@ function getGroqClient() {
     }
   }
   return groqClient;
+}
+
+const DANGEROUS_COMBINATIONS = {
+  'warfarin-nsaid': {
+    alternatives: [
+      {
+        for: 'nsaid',
+        suggestions: ['Acetaminophen', 'Tramadol', 'Gabapentin'],
+        reason: 'Safer pain options that do not increase bleeding risk'
+      }
+    ]
+  },
+  'ace-nsaid': {
+    alternatives: [
+      {
+        for: 'nsaid',
+        suggestions: ['Acetaminophen', 'Tramadol', 'Celecoxib'],
+        reason: 'Lower kidney risk when combined with ACE inhibitors'
+      },
+      {
+        for: 'ace',
+        suggestions: ['Losartan', 'Valsartan', 'Olmesartan'],
+        reason: 'ARBs have lower kidney interaction risk with NSAIDs'
+      }
+    ]
+  },
+  'ssri-opioid': {
+    alternatives: [
+      {
+        for: 'opioid',
+        suggestions: ['Acetaminophen', 'Gabapentin', 'NSAIDs'],
+        reason: 'Avoids serotonin syndrome risk'
+      }
+    ]
+  },
+  'statin-calcium': {
+    alternatives: [
+      {
+        for: 'statin',
+        suggestions: ['Atorvastatin', 'Rosuvastatin', 'Pravastatin'],
+        reason: 'Safer statins with calcium channel blockers'
+      },
+      {
+        for: 'calcium',
+        suggestions: ['Hydrochlorothiazide', 'Losartan'],
+        reason: 'Alternative blood pressure medications without statin interaction'
+      }
+    ]
+  },
+  'metformin-nsaid': {
+    alternatives: [
+      {
+        for: 'nsaid',
+        suggestions: ['Acetaminophen', 'Celecoxib'],
+        reason: 'Lower risk of lactic acidosis'
+      }
+    ]
+  },
+  'lisinopril-ibuprofen': {
+    alternatives: [
+      {
+        for: 'nsaid',
+        suggestions: ['Acetaminophen', 'Celecoxib', 'Tramadol'],
+        reason: 'Lower kidney and blood pressure interaction risk'
+      }
+    ]
+  }
+};
+
+function findKnownAlternative(drug1Name, drug2Name) {
+  const key1 = `${drug1Name.toLowerCase()}-${drug2Name.toLowerCase()}`;
+  const key2 = `${drug2Name.toLowerCase()}-${drug1Name.toLowerCase()}`;
+  
+  return DANGEROUS_COMBINATIONS[key1] || DANGEROUS_COMBINATIONS[key2] || null;
+}
+
+function getSmartAlternatives(interaction) {
+  const { drugs, severity } = interaction;
+  const [drug1, drug2] = drugs;
+  
+  const drug1Info = getDrugByName(drug1);
+  const drug2Info = getDrugByName(drug2);
+  
+  const alternatives = {
+    drug1Alternatives: [],
+    drug2Alternatives: [],
+    generalAdvice: []
+  };
+
+  const knownAlt = findKnownAlternative(drug1, drug2);
+  
+  if (knownAlt) {
+    for (const alt of knownAlt.alternatives) {
+      if (alt.for === 'nsaid' || alt.for === drug2.toLowerCase()) {
+        const drug2Alt = LOCAL_DRUG_DATABASE.filter(d => 
+          alt.suggestions.some(s => d.name.toLowerCase() === s.toLowerCase())
+        );
+        alternatives.drug2Alternatives.push(...drug2Alt.map(d => ({
+          name: d.name,
+          class: d.class,
+          reason: alt.reason,
+          genericCost: d.genericCost,
+          brandCost: d.brandCost
+        })));
+      }
+      if (alt.for === 'statin' || alt.for === drug1.toLowerCase()) {
+        const drug1Alt = LOCAL_DRUG_DATABASE.filter(d => 
+          alt.suggestions.some(s => d.name.toLowerCase() === s.toLowerCase())
+        );
+        alternatives.drug1Alternatives.push(...drug1Alt.map(d => ({
+          name: d.name,
+          class: d.class,
+          reason: alt.reason,
+          genericCost: d.genericCost,
+          brandCost: d.brandCost
+        })));
+      }
+      if (alt.for === 'ace') {
+        const aceAlts = LOCAL_DRUG_DATABASE.filter(d => 
+          d.class === 'ARB'
+        );
+        alternatives.drug1Alternatives.push(...aceAlts.map(d => ({
+          name: d.name,
+          class: d.class,
+          reason: alt.reason,
+          genericCost: d.genericCost,
+          brandCost: d.brandCost
+        })));
+      }
+    }
+  }
+
+  const classAlt1 = LOCAL_DRUG_DATABASE
+    .filter(d => drug1Info && d.class === drug1Info.class && d.name.toLowerCase() !== drug1.toLowerCase())
+    .map(d => ({
+      name: d.name,
+      class: d.class,
+      reason: `Alternative ${drug1Info.class} that may be safer`,
+      genericCost: d.genericCost,
+      brandCost: d.brandCost
+    }));
+  
+  const classAlt2 = LOCAL_DRUG_DATABASE
+    .filter(d => drug2Info && d.class === drug2Info.class && d.name.toLowerCase() !== drug2.toLowerCase())
+    .map(d => ({
+      name: d.name,
+      class: d.class,
+      reason: `Alternative ${drug2Info.class} that may be safer`,
+      genericCost: d.genericCost,
+      brandCost: d.brandCost
+    }));
+
+  alternatives.drug1Alternatives = [
+    ...alternatives.drug1Alternatives,
+    ...classAlt1
+  ].slice(0, 5);
+  
+  alternatives.drug2Alternatives = [
+    ...alternatives.drug2Alternatives,
+    ...classAlt2
+  ].slice(0, 5);
+
+  const seen = new Set();
+  alternatives.drug1Alternatives = alternatives.drug1Alternatives.filter(a => {
+    const key = a.name.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  alternatives.drug2Alternatives = alternatives.drug2Alternatives.filter(a => {
+    const key = a.name.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  if (severity === 'contraindicated' || severity === 'major') {
+    alternatives.generalAdvice = [
+      'Consult your doctor before switching medications',
+      'Do not stop taking prescribed medications without medical advice',
+      'Discuss these alternatives at your next appointment'
+    ];
+  }
+
+  return alternatives;
+}
+
+async function generateAlternativesWithAI(medications, interactions, userContext) {
+  const groq = getGroqClient();
+  if (!groq) {
+    return null;
+  }
+
+  const medicationsList = medications.map(m => m.name || m).join(', ');
+  
+  const systemPrompt = `You are a clinical pharmacist helping find safer medication alternatives.
+
+Given a drug interaction, suggest safer alternatives considering:
+1. Same therapeutic class alternatives
+2. Patient conditions (diabetes, kidney disease, heart conditions)
+3. Pregnancy and breastfeeding status
+4. Age-appropriate medications
+
+Return JSON format:
+{
+  "alternatives": [
+    {
+      "originalDrug": "Drug that has interaction",
+      "alternatives": [
+        {
+          "name": "Alternative drug name",
+          "class": "Drug class",
+          "reason": "Why this is safer",
+          "considerations": "Any specific considerations for this patient"
+        }
+      ]
+    }
+  ],
+  "generalAdvice": ["General advice for the patient"]
+}`;
+
+  const userPrompt = `Current medications: ${medicationsList}
+
+Interactions found:
+${interactions.map(i => `- ${i.drugs.join(' + ')} (${i.severity}): ${i.risk}`).join('\n')}
+
+Patient context:
+- Age: ${userContext.age || 'unknown'}
+- Gender: ${userContext.gender || 'not specified'}
+${userContext.conditions?.length ? `- Medical conditions: ${userContext.conditions.join(', ')}` : ''}
+${userContext.pregnant ? '- PREGNANT - avoid certain medications' : ''}
+${userContext.lactating ? '- BREASTFEEDING - check medication passage' : ''}
+
+Suggest safer alternatives in JSON format.`;
+
+  try {
+    const completion = await groq.chat.completions.create({
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      model: 'llama-3.1-8b-instant',
+      temperature: 0.3,
+      max_tokens: 2048,
+    });
+
+    const content = completion.choices[0]?.message?.content || '';
+    const parsed = extractJSON(content);
+    
+    return parsed;
+  } catch (error) {
+    console.error('AI alternatives generation error:', error);
+    return null;
+  }
 }
 
 function calculateRisk(interactions) {
@@ -324,11 +580,53 @@ export async function analyzeInteractions(req, res) {
 
     const aiAnalysis = await generateSummaryWithGroq(drugDetails, interactions, userContext);
 
+    let alternatives = null;
+    const moderateOrSevereInteractions = interactions.filter(
+      i => ['contraindicated', 'major', 'moderate'].includes(i.severity)
+    );
+
+    if (moderateOrSevereInteractions.length > 0) {
+      console.log('Generating alternatives for', moderateOrSevereInteractions.length, 'interactions...');
+      
+      const interactionsWithAlternatives = moderateOrSevereInteractions.map(interaction => {
+        const smartAlts = getSmartAlternatives(interaction);
+        return {
+          ...interaction,
+          alternatives: smartAlts
+        };
+      });
+
+      const aiAlts = await generateAlternativesWithAI(drugDetails, moderateOrSevereInteractions, userContext);
+
+      alternatives = {
+        interactionAlternatives: interactionsWithAlternatives,
+        aiSuggestions: aiAlts,
+        hasAlternatives: interactionsWithAlternatives.some(i => 
+          i.alternatives.drug1Alternatives.length > 0 || 
+          i.alternatives.drug2Alternatives.length > 0
+        )
+      };
+    }
+
     console.log('=== Analysis Complete ===');
+
+    const finalInteractions = interactions.map(interaction => {
+      const altData = alternatives?.interactionAlternatives?.find(
+        alt => alt.id === interaction.id
+      );
+      if (altData) {
+        return {
+          ...interaction,
+          alternatives: altData.alternatives
+        };
+      }
+      return interaction;
+    });
 
     res.json({
       success: true,
-      interactions,
+      interactions: finalInteractions,
+      alternatives,
       aiAnalysis,
       medications: drugDetails,
       summary: {
@@ -341,6 +639,7 @@ export async function analyzeInteractions(req, res) {
           ? 'No significant interactions detected'
           : `${interactions.length} interaction(s) found - ${riskLevel} risk`,
         interactionSource: 'groq',
+        hasAlternatives: alternatives?.hasAlternatives || false,
       },
     });
   } catch (error) {

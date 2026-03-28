@@ -43,10 +43,21 @@ export default function ResultsDashboard() {
     printReport(analysisResults, aiAnalysis, userData);
   };
 
+  const handleViewAlternatives = () => {
+    setCurrentScreen('alternatives');
+  };
+
   const hasResults = analysisResults && analysisResults.interactions !== undefined;
   const interactions = hasResults ? analysisResults.interactions : [];
   const summary = hasResults ? analysisResults.summary : null;
   const riskColors = summary ? getRiskColor(summary.riskLevel) : getRiskColor('safe');
+
+  const hasModerateOrSevereInteractions = interactions.some(
+    i => ['contraindicated', 'major', 'moderate'].includes(i.severity)
+  );
+  const hasSevereInteractions = interactions.some(
+    i => ['contraindicated', 'major'].includes(i.severity)
+  );
 
   const handleViewDetails = (interaction) => {
     setSelectedInteraction(interaction);
@@ -341,6 +352,24 @@ export default function ResultsDashboard() {
 
             {/* Action Buttons */}
             <section className="col-span-12 flex flex-wrap gap-4 justify-center">
+              {hasModerateOrSevereInteractions && (
+                <button
+                  onClick={handleViewAlternatives}
+                  className={`px-8 py-4 rounded-xl font-bold hover:opacity-90 transition-all flex items-center gap-2 ${
+                    hasSevereInteractions
+                      ? 'bg-error text-white animate-pulse'
+                      : 'bg-secondary text-white'
+                  }`}
+                >
+                  <span className="material-symbols-outlined">medication</span>
+                  View Safer Alternatives
+                  {hasSevereInteractions && (
+                    <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs">
+                      Urgent
+                    </span>
+                  )}
+                </button>
+              )}
               <button
                 onClick={() => setCurrentScreen('recommendations')}
                 className="bg-primary text-white px-8 py-4 rounded-xl font-bold hover:opacity-90 transition-all flex items-center gap-2"
