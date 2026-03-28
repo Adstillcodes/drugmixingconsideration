@@ -1,5 +1,18 @@
 const RXNORM_API = 'https://rxnav.nlm.nih.gov/REST';
 
+function convertToINR(usdPrice) {
+  if (!usdPrice) return null;
+  const usdMatch = usdPrice.match(/\$(\d+)(?:-(\d+))?/);
+  if (!usdMatch) return usdPrice;
+  
+  const minUsd = parseInt(usdMatch[1]);
+  const maxUsd = usdMatch[2] ? parseInt(usdMatch[2]) : minUsd;
+  const rate = 83;
+  const minInr = Math.round(minUsd * rate);
+  const maxInr = Math.round(maxUsd * rate);
+  return `₹${minInr}-${maxInr}/month`;
+}
+
 const LOCAL_DRUG_DATABASE = [
   { name: 'Metformin', category: 'Antidiabetic', class: 'Biguanide', genericCost: '$5-15/month', brandCost: '$100-200/month' },
   { name: 'Metformin ER', category: 'Antidiabetic', class: 'Biguanide', genericCost: '$10-20/month', brandCost: '$150-250/month' },
@@ -173,9 +186,14 @@ export async function searchDrugs(req, res) {
     const searchTerm = q || query || '';
 
     if (!searchTerm || searchTerm.length < 2) {
+      const drugsWithINR = LOCAL_DRUG_DATABASE.slice(0, limit).map(drug => ({
+        ...drug,
+        genericCost: convertToINR(drug.genericCost),
+        brandCost: convertToINR(drug.brandCost)
+      }));
       return res.json({
         success: true,
-        drugs: LOCAL_DRUG_DATABASE.slice(0, limit),
+        drugs: drugsWithINR,
         source: 'local',
       });
     }
@@ -187,7 +205,11 @@ export async function searchDrugs(req, res) {
         drug.name.toLowerCase().includes(queryLower) ||
         drug.category.toLowerCase().includes(queryLower) ||
         drug.class.toLowerCase().includes(queryLower)
-    ).slice(0, limit);
+    ).slice(0, limit).map(drug => ({
+      ...drug,
+      genericCost: convertToINR(drug.genericCost),
+      brandCost: convertToINR(drug.brandCost)
+    }));
 
     if (localMatches.length >= 5) {
       return res.json({
@@ -216,10 +238,15 @@ export async function searchDrugs(req, res) {
     });
   } catch (error) {
     console.error('Drug search error:', error);
+    const drugsWithINR = LOCAL_DRUG_DATABASE.slice(0, 20).map(drug => ({
+      ...drug,
+      genericCost: convertToINR(drug.genericCost),
+      brandCost: convertToINR(drug.brandCost)
+    }));
     res.status(500).json({
       success: false,
       error: 'Search failed',
-      drugs: LOCAL_DRUG_DATABASE.slice(0, 20),
+      drugs: drugsWithINR,
       source: 'local-fallback',
     });
   }
@@ -255,8 +282,8 @@ export function getAlternativesForInteraction(drug1Name, drug2Name, severity) {
         name: d.name,
         class: d.class,
         reason: `Alternative ${drug1.class} that may not interact with ${drug2Name}`,
-        genericCost: d.genericCost,
-        brandCost: d.brandCost
+        genericCost: convertToINR(d.genericCost),
+        brandCost: convertToINR(d.brandCost)
       }));
   }
 
@@ -268,8 +295,8 @@ export function getAlternativesForInteraction(drug1Name, drug2Name, severity) {
         name: d.name,
         class: d.class,
         reason: `Alternative ${drug2.class} that may not interact with ${drug1Name}`,
-        genericCost: d.genericCost,
-        brandCost: d.brandCost
+        genericCost: convertToINR(d.genericCost),
+        brandCost: convertToINR(d.brandCost)
       }));
   }
 

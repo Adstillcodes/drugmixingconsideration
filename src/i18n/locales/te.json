@@ -281,6 +281,30 @@
     "noInternet": "Please check your internet connection.",
     "serverError": "Server error. Please try again later."
   },
+  "alternatives": {
+    "title": "సురక్షిత ప్రత్యామ్నాకాలు",
+    "subtitle": "గుర్తించబడిన ఇంటరాక్షన్ల ఆధారంగా సూచించబడిన మందుల ప్రత్యామ్నాకాలు",
+    "noAlternativesAvailable": {
+      "title": "ప్రత్యామ్నాకాలు అందుబాటులో లేవు",
+      "message": "మీ ప్రస్తుత మందుల జాబితాలో ప్రత్యామ్నాకాలు అవసరమయ్యే ఇంటరాక్షన్లు గుర్తించబడలేదు.",
+      "button": "ఫలితాలకు తిరిగి వెళ్ళండి"
+    },
+    "noAlternativesNeeded": {
+      "title": "ప్రత్యామ్నాకాలు అవసరం లేదు",
+      "message": "మీ ప్రస్తుత మందులలో మితమైన లేదా తీవ్రమైన ఇంటరాక్షన్లు లేవు."
+    },
+    "suggestedAlternatives": "సూచించబడిన ప్రత్యామ్నాకాలు",
+    "insteadOf": "బదులు",
+    "generic": "జెనరిక్",
+    "brand": "బ్రాండ్",
+    "na": "అందుబాటులో లేదు",
+    "importantNote": "ముఖ్యమైన గమనిక",
+    "viewDetails": "వివరాలను చూడండి",
+    "aiRecommendations": "AI సిఫార్సులు",
+    "backToResults": "ఫలితాలకు తిరిగి వెళ్ళండి",
+    "noSpecificAlternatives": "ఈ ఇంటరాక్షన్ కోసం నిర్దిష్ట ప్రత్యామ్నాకాలు కనుగొనబడలేదు.",
+    "consultHealthcare": "వ్యక్తిగత సిఫార్సుల కోసం మీ ఆరోగ్య సంరక్షణ ప్రదాతను సంప్రదించండి."
+  },
   "privacyPolicy": {
     "title": "గోప్యతా విధానం",
     "lastUpdated": "చివరి నవీకరణ: 28 మార్చ్, 2026",

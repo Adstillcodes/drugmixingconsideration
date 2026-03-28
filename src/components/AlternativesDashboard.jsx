@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 
 function getSeverityBadgeColor(severity) {
@@ -16,16 +17,16 @@ function getCostBadgeColor(cost) {
   
   const costLower = cost.toLowerCase();
   
-  if (costLower.includes('$5') || costLower.includes('$10')) {
+  if (costLower.includes('₹50') || costLower.includes('₹100') || costLower.includes('₹200')) {
     return 'bg-success/10 text-success border border-success/20';
   }
-  if (costLower.includes('$50') || costLower.includes('$80') || costLower.includes('$100')) {
+  if (costLower.includes('₹500') || costLower.includes('₹800') || costLower.includes('₹1000')) {
     return 'bg-yellow-100 text-yellow-700 border border-yellow-200';
   }
-  if (costLower.includes('$200') || costLower.includes('$300') || costLower.includes('$400')) {
+  if (costLower.includes('₹2000') || costLower.includes('₹3000') || costLower.includes('₹4000')) {
     return 'bg-orange-100 text-orange-700 border border-orange-200';
   }
-  if (costLower.includes('$500') || costLower.includes('$600') || costLower.includes('$800') || costLower.includes('$1000')) {
+  if (costLower.includes('₹5000') || costLower.includes('₹6000') || costLower.includes('₹8000') || costLower.includes('₹10000')) {
     return 'bg-error/10 text-error border border-error/20';
   }
   
@@ -33,6 +34,7 @@ function getCostBadgeColor(cost) {
 }
 
 export default function AlternativesDashboard() {
+  const { t } = useTranslation();
   const { analysisResults, setCurrentScreen, setSelectedInteraction } = useApp();
 
   const alternatives = analysisResults?.alternatives;
@@ -54,19 +56,19 @@ export default function AlternativesDashboard() {
   if (!analysisResults || !alternatives) {
     return (
       <div className="max-w-6xl mx-auto">
-        <div className="bg-surface-container-low rounded-3xl p-12 text-center border border-outline-variant/10">
-          <div className="w-20 h-20 bg-surface-container-high rounded-full flex items-center justify-center mx-auto mb-6">
-            <span className="material-symbols-outlined text-on-surface/40 text-4xl">medication</span>
+        <div className="bg-surface-container-low rounded-2xl sm:rounded-3xl p-6 sm:p-12 text-center border border-outline-variant/10">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-surface-container-high rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+            <span className="material-symbols-outlined text-on-surface/40 text-3xl sm:text-4xl">medication</span>
           </div>
-          <h2 className="text-2xl font-bold text-on-surface mb-4">No Alternatives Available</h2>
-          <p className="text-on-surface/60 max-w-md mx-auto mb-8">
-            There are no detected interactions requiring alternatives in your current medication list.
+          <h2 className="text-xl sm:text-2xl font-bold text-on-surface mb-3 sm:mb-4">{t('alternatives.noAlternativesAvailable.title')}</h2>
+          <p className="text-on-surface/60 max-w-md mx-auto mb-6 sm:mb-8 text-sm sm:text-base">
+            {t('alternatives.noAlternativesAvailable.message')}
           </p>
           <button
             onClick={handleBackToResults}
-            className="bg-primary text-white px-8 py-4 rounded-xl font-bold hover:opacity-90 transition-all"
+            className="bg-primary text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-bold hover:opacity-90 transition-all text-sm sm:text-base"
           >
-            Back to Results
+            {t('alternatives.noAlternativesAvailable.button')}
           </button>
         </div>
       </div>
@@ -79,35 +81,35 @@ export default function AlternativesDashboard() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <header className="mb-10">
-        <div className="flex items-center gap-4 mb-4">
+      <header className="mb-6 sm:mb-10">
+        <div className="flex items-center gap-2 sm:gap-4 mb-3 sm:mb-4">
           <button
             onClick={handleBackToResults}
             className="p-2 rounded-xl hover:bg-surface-container-low transition-colors"
           >
             <span className="material-symbols-outlined">arrow_back</span>
           </button>
-          <h1 className="text-[2.75rem] font-extrabold text-on-surface leading-tight tracking-tight">
-            Safer Alternatives
+          <h1 className="text-xl sm:text-2xl md:text-[2.75rem] font-extrabold text-on-surface leading-tight tracking-tight">
+            {t('alternatives.title')}
           </h1>
         </div>
-        <p className="text-on-surface-variant text-lg ml-14">
-          Suggested medication alternatives based on detected interactions
+        <p className="text-on-surface-variant text-sm sm:text-base md:text-lg ml-10 sm:ml-14">
+          {t('alternatives.subtitle')}
         </p>
       </header>
 
       {!alternatives.hasAlternatives && moderateOrSevereInteractions.length === 0 ? (
-        <div className="bg-success/10 rounded-3xl p-12 text-center border border-success/20">
-          <div className="w-20 h-20 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <span className="material-symbols-outlined text-success text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+        <div className="bg-success/10 rounded-2xl sm:rounded-3xl p-6 sm:p-12 text-center border border-success/20">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+            <span className="material-symbols-outlined text-success text-3xl sm:text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
           </div>
-          <h2 className="text-2xl font-bold text-on-surface mb-2">No Alternatives Needed</h2>
-          <p className="text-on-surface/60 max-w-md mx-auto">
-            Your current medications don't have any moderate or severe interactions requiring alternatives.
+          <h2 className="text-xl sm:text-2xl font-bold text-on-surface mb-2">{t('alternatives.noAlternativesNeeded.title')}</h2>
+          <p className="text-on-surface/60 max-w-md mx-auto text-sm sm:text-base">
+            {t('alternatives.noAlternativesNeeded.message')}
           </p>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-4 sm:space-y-6 lg:space-y-8">
           {moderateOrSevereInteractions.map((interaction) => {
             const alts = getInteractionAlternatives(interaction.id);
             const hasAlts = alts && (alts.drug1Alternatives.length > 0 || alts.drug2Alternatives.length > 0);
@@ -115,34 +117,34 @@ export default function AlternativesDashboard() {
             return (
               <div
                 key={interaction.id}
-                className="bg-white rounded-3xl overflow-hidden border border-outline-variant/10 shadow-lg"
+                className="bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-outline-variant/10 shadow-lg"
               >
                 <div
-                  className="p-6 bg-surface-container-low cursor-pointer hover:bg-surface-container transition-colors"
+                  className="p-4 sm:p-6 bg-surface-container-low cursor-pointer hover:bg-surface-container transition-colors"
                   onClick={() => handleViewDetails(interaction)}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className={`p-3 rounded-xl ${interaction.severity === 'contraindicated' || interaction.severity === 'major' ? 'bg-error/10 text-error' : 'bg-yellow-100 text-yellow-700'}`}>
-                        <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                    <div className="flex items-start sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                      <div className={`p-2 sm:p-3 rounded-lg sm:rounded-xl ${interaction.severity === 'contraindicated' || interaction.severity === 'major' ? 'bg-error/10 text-error' : 'bg-yellow-100 text-yellow-700'}`}>
+                        <span className="material-symbols-outlined text-xl sm:text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>
                           {interaction.severity === 'contraindicated' || interaction.severity === 'major' ? 'warning' : 'info'}
                         </span>
                       </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-on-surface">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base sm:text-xl font-bold text-on-surface truncate">
                           {interaction.drugs.join(' + ')}
                         </h3>
-                        <p className="text-on-surface-variant text-sm">
+                        <p className="text-on-surface-variant text-xs sm:text-sm truncate">
                           {interaction.risk}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${getSeverityBadgeColor(interaction.severity)}`}>
+                    <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                      <span className={`px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase ${getSeverityBadgeColor(interaction.severity)}`}>
                         {interaction.severity}
                       </span>
-                      <button className="bg-white border border-outline-variant/30 px-4 py-2 rounded-xl text-sm font-bold hover:bg-surface-container-low transition-all flex items-center gap-2">
-                        View Details
+                      <button className="bg-white border border-outline-variant/30 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold hover:bg-surface-container-low transition-all flex items-center gap-1 sm:gap-2">
+                        {t('alternatives.viewDetails')}
                         <span className="material-symbols-outlined text-sm">arrow_forward</span>
                       </button>
                     </div>
@@ -150,41 +152,41 @@ export default function AlternativesDashboard() {
                 </div>
 
                 {hasAlts ? (
-                  <div className="p-6 space-y-6">
+                  <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>medication</span>
-                      <h4 className="font-bold text-on-surface">Suggested Alternatives</h4>
+                      <h4 className="font-bold text-on-surface text-sm sm:text-base">{t('alternatives.suggestedAlternatives')}</h4>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                       {alts.drug1Alternatives.length > 0 && (
-                        <div className="bg-primary/5 rounded-2xl p-5 border border-primary/10">
-                          <h5 className="font-bold text-on-surface mb-3 flex items-center gap-2">
-                            <span className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                              <span className="material-symbols-outlined text-primary text-sm">swap_horiz</span>
+                        <div className="bg-primary/5 rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-primary/10">
+                          <h5 className="font-bold text-on-surface mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
+                            <span className="w-6 h-6 sm:w-8 sm:h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                              <span className="material-symbols-outlined text-primary text-xs sm:text-sm">swap_horiz</span>
                             </span>
-                            Instead of <span className="text-primary font-extrabold">{interaction.drugs[0]}</span>
+                            {t('alternatives.insteadOf')} <span className="text-primary font-extrabold">{interaction.drugs[0]}</span>
                           </h5>
-                          <div className="space-y-3">
+                          <div className="space-y-2 sm:space-y-3">
                             {alts.drug1Alternatives.map((alt, idx) => (
-                              <div key={idx} className="bg-white rounded-xl p-4 border border-outline-variant/10">
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span className="font-bold text-on-surface">{alt.name}</span>
-                                      <span className="px-2 py-0.5 bg-surface-container-low rounded text-xs text-on-surface-variant">
+                              <div key={idx} className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 border border-outline-variant/10">
+                                <div className="flex items-start justify-between gap-2 sm:gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                      <span className="font-bold text-on-surface text-sm">{alt.name}</span>
+                                      <span className="px-1.5 sm:px-2 py-0.5 bg-surface-container-low rounded text-[10px] sm:text-xs text-on-surface-variant">
                                         {alt.class}
                                       </span>
                                     </div>
-                                    <p className="text-sm text-on-surface-variant">{alt.reason}</p>
+                                    <p className="text-xs sm:text-sm text-on-surface-variant">{alt.reason}</p>
                                   </div>
                                 </div>
-                                <div className="mt-3 flex items-center gap-2">
-                                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getCostBadgeColor(alt.genericCost)}`}>
-                                    Generic: {alt.genericCost || 'N/A'}
+                                <div className="mt-2 sm:mt-3 flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                  <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${getCostBadgeColor(alt.genericCost)}`}>
+                                    {t('alternatives.generic')}: {alt.genericCost || t('alternatives.na')}
                                   </span>
-                                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getCostBadgeColor(alt.brandCost)}`}>
-                                    Brand: {alt.brandCost || 'N/A'}
+                                  <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${getCostBadgeColor(alt.brandCost)}`}>
+                                    {t('alternatives.brand')}: {alt.brandCost || t('alternatives.na')}
                                   </span>
                                 </div>
                               </div>
@@ -194,33 +196,33 @@ export default function AlternativesDashboard() {
                       )}
 
                       {alts.drug2Alternatives.length > 0 && (
-                        <div className="bg-secondary/5 rounded-2xl p-5 border border-secondary/10">
-                          <h5 className="font-bold text-on-surface mb-3 flex items-center gap-2">
-                            <span className="w-8 h-8 bg-secondary/10 rounded-full flex items-center justify-center">
-                              <span className="material-symbols-outlined text-secondary text-sm">swap_horiz</span>
+                        <div className="bg-secondary/5 rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-secondary/10">
+                          <h5 className="font-bold text-on-surface mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
+                            <span className="w-6 h-6 sm:w-8 sm:h-8 bg-secondary/10 rounded-full flex items-center justify-center">
+                              <span className="material-symbols-outlined text-secondary text-xs sm:text-sm">swap_horiz</span>
                             </span>
-                            Instead of <span className="text-secondary font-extrabold">{interaction.drugs[1]}</span>
+                            {t('alternatives.insteadOf')} <span className="text-secondary font-extrabold">{interaction.drugs[1]}</span>
                           </h5>
-                          <div className="space-y-3">
+                          <div className="space-y-2 sm:space-y-3">
                             {alts.drug2Alternatives.map((alt, idx) => (
-                              <div key={idx} className="bg-white rounded-xl p-4 border border-outline-variant/10">
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span className="font-bold text-on-surface">{alt.name}</span>
-                                      <span className="px-2 py-0.5 bg-surface-container-low rounded text-xs text-on-surface-variant">
+                              <div key={idx} className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 border border-outline-variant/10">
+                                <div className="flex items-start justify-between gap-2 sm:gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                      <span className="font-bold text-on-surface text-sm">{alt.name}</span>
+                                      <span className="px-1.5 sm:px-2 py-0.5 bg-surface-container-low rounded text-[10px] sm:text-xs text-on-surface-variant">
                                         {alt.class}
                                       </span>
                                     </div>
-                                    <p className="text-sm text-on-surface-variant">{alt.reason}</p>
+                                    <p className="text-xs sm:text-sm text-on-surface-variant">{alt.reason}</p>
                                   </div>
                                 </div>
-                                <div className="mt-3 flex items-center gap-2">
-                                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getCostBadgeColor(alt.genericCost)}`}>
-                                    Generic: {alt.genericCost || 'N/A'}
+                                <div className="mt-2 sm:mt-3 flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                  <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${getCostBadgeColor(alt.genericCost)}`}>
+                                    {t('alternatives.generic')}: {alt.genericCost || t('alternatives.na')}
                                   </span>
-                                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getCostBadgeColor(alt.brandCost)}`}>
-                                    Brand: {alt.brandCost || 'N/A'}
+                                  <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${getCostBadgeColor(alt.brandCost)}`}>
+                                    {t('alternatives.brand')}: {alt.brandCost || t('alternatives.na')}
                                   </span>
                                 </div>
                               </div>
@@ -231,14 +233,14 @@ export default function AlternativesDashboard() {
                     </div>
 
                     {alts.generalAdvice && alts.generalAdvice.length > 0 && (
-                      <div className="mt-4 p-4 bg-orange-50 rounded-xl border border-orange-200">
-                        <div className="flex items-start gap-3">
+                      <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-orange-50 rounded-lg sm:rounded-xl border border-orange-200">
+                        <div className="flex items-start gap-2 sm:gap-3">
                           <span className="material-symbols-outlined text-orange-500 mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>info</span>
                           <div>
-                            <span className="font-bold text-orange-700">Important Note</span>
-                            <ul className="mt-2 space-y-1">
+                            <span className="font-bold text-orange-700 text-sm sm:text-base">{t('alternatives.importantNote')}</span>
+                            <ul className="mt-1 sm:mt-2 space-y-1">
                               {alts.generalAdvice.map((advice, idx) => (
-                                <li key={idx} className="text-sm text-orange-700">• {advice}</li>
+                                <li key={idx} className="text-xs sm:text-sm text-orange-700">• {advice}</li>
                               ))}
                             </ul>
                           </div>
@@ -247,9 +249,9 @@ export default function AlternativesDashboard() {
                     )}
                   </div>
                 ) : (
-                  <div className="p-6 text-center">
-                    <p className="text-on-surface-variant">No specific alternatives found for this interaction.</p>
-                    <p className="text-sm text-on-surface/60 mt-1">Consult your healthcare provider for personalized recommendations.</p>
+                  <div className="p-4 sm:p-6 text-center">
+                    <p className="text-on-surface-variant text-sm sm:text-base">{t('alternatives.noSpecificAlternatives')}</p>
+                    <p className="text-xs sm:text-sm text-on-surface/60 mt-1">{t('alternatives.consultHealthcare')}</p>
                   </div>
                 )}
               </div>
@@ -257,14 +259,14 @@ export default function AlternativesDashboard() {
           })}
 
           {alternatives.aiSuggestions && alternatives.aiSuggestions.generalAdvice && (
-            <div className="bg-gradient-to-br from-primary/5 to-primary-container/10 rounded-3xl p-6 border border-primary/20">
-              <div className="flex items-center gap-2 mb-4">
+            <div className="bg-gradient-to-br from-primary/5 to-primary-container/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-primary/20">
+              <div className="flex items-center gap-2 mb-3 sm:mb-4">
                 <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>psychology</span>
-                <h3 className="text-lg font-bold text-primary">AI Recommendations</h3>
+                <h3 className="text-base sm:text-lg font-bold text-primary">{t('alternatives.aiRecommendations')}</h3>
               </div>
-              <ul className="space-y-2">
+              <ul className="space-y-1.5 sm:space-y-2">
                 {alternatives.aiSuggestions.generalAdvice.map((advice, idx) => (
-                  <li key={idx} className="flex items-start gap-2 text-on-surface">
+                  <li key={idx} className="flex items-start gap-2 text-on-surface text-sm">
                     <span className="text-primary">•</span>
                     <span>{advice}</span>
                   </li>
@@ -275,13 +277,13 @@ export default function AlternativesDashboard() {
         </div>
       )}
 
-      <div className="mt-8 flex justify-center">
+      <div className="mt-6 sm:mt-8 flex justify-center">
         <button
           onClick={handleBackToResults}
-          className="bg-surface-container-high text-on-surface px-8 py-4 rounded-xl font-bold hover:bg-surface-container-low transition-all flex items-center gap-2"
+          className="bg-surface-container-high text-on-surface px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-bold hover:bg-surface-container-low transition-all flex items-center gap-2 text-sm sm:text-base"
         >
           <span className="material-symbols-outlined">arrow_back</span>
-          Back to Results
+          {t('alternatives.backToResults')}
         </button>
       </div>
     </div>

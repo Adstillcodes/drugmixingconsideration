@@ -56,6 +56,98 @@ function extractTimingFromContext(text, drugName) {
   return null;
 }
 
+function cleanDrugName(rawName) {
+  if (!rawName || typeof rawName !== 'string') return '';
+  
+  let cleaned = rawName.trim();
+  
+  if (cleaned.length > 100) {
+    cleaned = cleaned.substring(0, 100);
+  }
+  
+  if (cleaned.includes('(') && cleaned.includes('MG') && !cleaned.includes(' + ')) {
+    const ingredients = [];
+    const ingredientPattern = /([a-zA-Z]+(?:\s+[a-zA-Z]+)?)\s+\d+(?:\.\d+)?\s*(?:MG|MCG|ML|G)\/[A-Z]/gi;
+    const matches = cleaned.match(ingredientPattern);
+    
+    if (!matches) {
+      const simplePattern = /([a-zA-Z]+)\s+\d+(?:\.\d+)?\s*(?:MG|MCG|ML|G)/gi;
+      const simpleMatches = [...cleaned.matchAll(simplePattern)];
+      for (const match of simpleMatches) {
+        const ingredientName = match[1].trim();
+        if (ingredientName.length > 3 && !['pack', 'oral', 'tablet', 'capsule', 'solution'].includes(ingredientName.toLowerCase())) {
+          ingredients.push(ingredientName.charAt(0).toUpperCase() + ingredientName.slice(1).toLowerCase());
+        }
+      }
+    }
+    
+    if (ingredients.length > 0) {
+      const uniqueIngredients = [...new Set(ingredients)];
+      return uniqueIngredients.slice(0, 3).join(' + ');
+    }
+  }
+  
+  if (cleaned.match(/^\d+\s*\(/) || cleaned.includes('{') || cleaned.includes('Pack')) {
+    cleaned = cleaned
+      .replace(/^\d+\s*\(/, '')
+      .replace(/^\{\d+\s*\(/, '')
+      .replace(/\)\s*\/.*$/, '')
+      .replace(/\s*\}\s*Pack.*$/i, '')
+      .replace(/^\(|\)$/g, '')
+      .trim();
+  }
+  
+  cleaned = cleaned.replace(/^\d+\s*\(|\)\s*\/\s*\d+.*$/g, '');
+  cleaned = cleaned.replace(/\d+\s*\(.*?\)\s*/g, '');
+  cleaned = cleaned.replace(/\(\s*Pack\s*\[.*?\]/gi, '');
+  cleaned = cleaned.replace(/\[\s*Pack\s*\]/gi, '');
+  cleaned = cleaned.replace(/\[.*?\]/g, '');
+  cleaned = cleaned.replace(/\d+(?:\.\d+)?\s*(?:MG|Mcg|ML|G|IU|MEQ|%)[^\s]*/gi, '');
+  cleaned = cleaned.replace(/\s*(?:Oral|Tablet|Capsule|Injection|Solution|Cream|Patch)\b/gi, '');
+  cleaned = cleaned.replace(/\s*\/+\s*/g, ' + ');
+  cleaned = cleaned.replace(/\s+/g, ' ');
+  
+  const parts = cleaned.split('+').map(p => p.trim()).filter(p => p && p.length > 1 && p.length < 50);
+  if (parts.length > 0) {
+    if (parts.length > 3) {
+      cleaned = parts.slice(0, 3).join(' + ') + ' + others';
+    } else {
+      cleaned = parts.join(' + ');
+    }
+  }
+  
+  cleaned = cleaned
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+  
+  cleaned = cleaned.replace(/\s+[a-z]\s+/g, ' ');
+  
+  if (cleaned.length > 60 || cleaned.match(/\d+\s*\(/) || cleaned.includes('{')) {
+    return '';
+  }
+  
+  return cleaned.trim();
+}
+
+function isValidDrugName(name) {
+  if (!name || typeof name !== 'string') return false;
+  
+  const cleaned = name.trim();
+  
+  if (cleaned.length < 2 || cleaned.length > 60) return false;
+  if (cleaned.match(/\d+\s*\(/)) return false;
+  if (cleaned.includes('{') || cleaned.includes('}')) return false;
+  if (cleaned.includes('Pack') && cleaned.length > 20) return false;
+  if (cleaned.match(/\)\s*\/|\/\s*\(/)) return false;
+  if (cleaned.split(/\s+/).length > 8) return false;
+  
+  const hasLetters = /[a-zA-Z]{3,}/.test(cleaned);
+  if (!hasLetters) return false;
+  
+  return true;
+}
+
 export async function extractMedicationsFromText(text) {
   const textLower = text.toLowerCase();
   const foundDrugs = [];
@@ -72,32 +164,51 @@ export async function extractMedicationsFromText(text) {
 
         const timing = extractTimingFromContext(text, drug);
 
-        foundDrugs.push({
-          name: drug.charAt(0).toUpperCase() + drug.slice(1),
-          dosage: dosageMatch ? dosageMatch[0].match(dosagePattern)?.[0] || 'Not specified' : 'Not specified',
-          timing: timing || '',
-          category: 'Detected',
-          confidence: 'medium',
-        });
+        const drugName = drug.charAt(0).toUpperCase() + drug.slice(1);
+        if (isValidDrugName(drugName)) {
+          foundDrugs.push({
+            name: drugName,
+            dosage: dosageMatch ? dosageMatch[0].match(dosagePattern)?.[0] || 'Not specified' : 'Not specified',
+            timing: timing || '',
+            category: 'Detected',
+            confidence: 'medium',
+          });
+        }
       }
     }
   }
 
   try {
-    const systemPrompt = `Extract medication names from prescription text. Return valid JSON array:
-[{"name": "DrugName", "dosage": "dosage if found or 'Not specified'", "timing": "time of day if mentioned or empty string", "category": "category"}]
+    const systemPrompt = `You are a medical prescription parser. Extract medication names in a clean, user-friendly format.
 
-Common timing values: "06:00", "07:00", "08:00", "09:00", "12:00", "18:00", "20:00", "21:00", "Before breakfast", "After breakfast", "Before lunch", "After lunch", "Before dinner", "After dinner", "At bedtime", "Morning", "Afternoon", "Evening", "Night"
+CRITICAL RULES:
+1. For COMBINATION drugs (multiple ingredients like cough syrups), return the ingredients joined by " + "
+   - Example: "acetaminophen + dextromethorphan + doxylamine"
+   - Example: "acetaminophen + aspirin + caffeine"
+2. For SINGLE drugs, return just the drug name
+   - Example: "Lisinopril", "Metformin", "Aspirin"
+3. NEVER return raw prescription text, dosages in parentheses, or pack information
+4. NEVER return text like "100 (acetaminophen 250 MG / aspirin...)" - extract the drug names only
+5. Proper Title Case: "Acetaminophen", "Metformin", "Dextromethorphan"
+6. For cough/cold combinations, extract ALL active ingredients
 
-Rules:
-- Only actual medication/drug names
-- Include dosage if mentioned (e.g., "500mg", "10mg", "twice daily")
-- Include timing/schedule if mentioned (e.g., "in the morning", "twice daily", "at bedtime")
-- Proper capitalization for drug names
-- Do NOT include patient/doctor names or addresses
-- Return ONLY valid JSON array, no markdown`;
+Examples of CORRECT output:
+- "Acetaminophen + Dextromethorphan + Doxylamine" (from cough syrup)
+- "Acetaminophen" (from single drug)
+- "Metformin + Lisinopril" (from two drugs)
+- "Aspirin + Clopidogrel" (from blood thinner combo)
 
-    const userPrompt = `Extract medications from:\n${text.substring(0, 3000)}\n\nReturn JSON array with name, dosage, timing, and category for each medication.`;
+Examples of WRONG output (DO NOT DO THIS):
+- "100 (acetaminophen 250 MG / aspirin 250 MG / caffeine 65 MG Oral Tablet [Excedrin])"
+- "1 (acetaminophen 33.3 MG/ML / dextromethorphan hydrobromide 1 MG/ML)"
+- "{1 (...Pack"
+
+Return valid JSON array:
+[{"name": "Drug Name(s)", "dosage": "Not specified", "timing": "", "category": "General"}]
+
+Return ONLY valid JSON array, no explanations, no markdown.`;
+
+    const userPrompt = `Parse this prescription and extract clean medication names:\n\n${text.substring(0, 2000)}\n\nReturn JSON array with properly formatted drug names.`;
 
     const groq = getGroqClient();
     if (!groq) {
@@ -122,15 +233,18 @@ Rules:
         const groqDrugs = JSON.parse(jsonMatch[0]);
 
         for (const drug of groqDrugs) {
-          if (drug.name && !seen.has(drug.name.toLowerCase())) {
-            seen.add(drug.name.toLowerCase());
-            foundDrugs.push({
-              name: drug.name,
-              dosage: drug.dosage || 'Not specified',
-              timing: drug.timing || '',
-              category: drug.category || 'Extracted',
-              confidence: 'high',
-            });
+          if (drug.name) {
+            const cleanedName = cleanDrugName(drug.name);
+            if (isValidDrugName(cleanedName) && !seen.has(cleanedName.toLowerCase())) {
+              seen.add(cleanedName.toLowerCase());
+              foundDrugs.push({
+                name: cleanedName,
+                dosage: drug.dosage || 'Not specified',
+                timing: drug.timing || '',
+                category: drug.category || 'Extracted',
+                confidence: 'high',
+              });
+            }
           }
         }
       } catch (e) {

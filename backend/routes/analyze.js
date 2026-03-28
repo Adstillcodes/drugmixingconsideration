@@ -1,6 +1,18 @@
 import Groq from 'groq-sdk';
 import { getAlternativesForInteraction, getDrugByName, LOCAL_DRUG_DATABASE } from './drugs.js';
 
+function convertToINR(usdPrice) {
+  if (!usdPrice) return null;
+  const usdMatch = usdPrice.match(/\$(\d+)(?:-(\d+))?/);
+  if (!usdMatch) return usdPrice;
+  const minUsd = parseInt(usdMatch[1]);
+  const maxUsd = usdMatch[2] ? parseInt(usdMatch[2]) : minUsd;
+  const rate = 83;
+  const minInr = Math.round(minUsd * rate);
+  const maxInr = Math.round(maxUsd * rate);
+  return `₹${minInr}-${maxInr}/month`;
+}
+
 let groqClient = null;
 
 function getGroqClient() {
@@ -112,8 +124,8 @@ function getSmartAlternatives(interaction) {
           name: d.name,
           class: d.class,
           reason: alt.reason,
-          genericCost: d.genericCost,
-          brandCost: d.brandCost
+          genericCost: convertToINR(d.genericCost),
+          brandCost: convertToINR(d.brandCost)
         })));
       }
       if (alt.for === 'statin' || alt.for === drug1.toLowerCase()) {
@@ -124,7 +136,7 @@ function getSmartAlternatives(interaction) {
           name: d.name,
           class: d.class,
           reason: alt.reason,
-          genericCost: d.genericCost,
+          genericCost: convertToINR(d.genericCost),
           brandCost: d.brandCost
         })));
       }
@@ -149,8 +161,8 @@ function getSmartAlternatives(interaction) {
       name: d.name,
       class: d.class,
       reason: `Alternative ${drug1Info.class} that may be safer`,
-      genericCost: d.genericCost,
-      brandCost: d.brandCost
+      genericCost: convertToINR(d.genericCost),
+      brandCost: convertToINR(d.brandCost)
     }));
   
   const classAlt2 = LOCAL_DRUG_DATABASE
@@ -159,8 +171,8 @@ function getSmartAlternatives(interaction) {
       name: d.name,
       class: d.class,
       reason: `Alternative ${drug2Info.class} that may be safer`,
-      genericCost: d.genericCost,
-      brandCost: d.brandCost
+      genericCost: convertToINR(d.genericCost),
+      brandCost: convertToINR(d.brandCost)
     }));
 
   alternatives.drug1Alternatives = [

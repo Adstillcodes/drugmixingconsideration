@@ -38,7 +38,7 @@ function AppContent() {
     <div className="min-h-screen bg-surface">
       <TopNav />
       <SideNav />
-      <main className="lg:ml-64 pt-24 pb-12 px-6">
+      <main className="lg:ml-64 pt-20 md:pt-24 pb-24 md:pb-12 px-4 md:px-6">
         {renderScreen()}
       </main>
       <BottomNav />
