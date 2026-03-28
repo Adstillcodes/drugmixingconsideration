@@ -287,6 +287,30 @@
     "noInternet": "Please check your internet connection.",
     "serverError": "Server error. Please try again later."
   },
+  "alternatives": {
+    "title": "Safer Alternatives",
+    "subtitle": "Suggested medication alternatives based on detected interactions",
+    "noAlternativesAvailable": {
+      "title": "No Alternatives Available",
+      "message": "There are no detected interactions requiring alternatives in your current medication list.",
+      "button": "Back to Results"
+    },
+    "noAlternativesNeeded": {
+      "title": "No Alternatives Needed",
+      "message": "Your current medications don't have any moderate or severe interactions requiring alternatives."
+    },
+    "suggestedAlternatives": "Suggested Alternatives",
+    "insteadOf": "Instead of",
+    "generic": "Generic",
+    "brand": "Brand",
+    "na": "N/A",
+    "importantNote": "Important Note",
+    "viewDetails": "View Details",
+    "aiRecommendations": "AI Recommendations",
+    "backToResults": "Back to Results",
+    "noSpecificAlternatives": "No specific alternatives found for this interaction.",
+    "consultHealthcare": "Consult your healthcare provider for personalized recommendations."
+  },
   "privacyPolicy": {
     "title": "Privacy Policy",
     "lastUpdated": "Last updated: March 28, 2026",
