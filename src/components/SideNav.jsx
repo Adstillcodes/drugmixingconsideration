@@ -9,7 +9,7 @@ const navItems = [
 ];
 
 export default function SideNav() {
-  const { currentScreen, setCurrentScreen } = useApp();
+  const { currentScreen, setCurrentScreen, resetAnalysis } = useApp();
 
   return (
     <aside className="fixed left-0 top-0 h-full flex flex-col pt-24 bg-surface-container-low w-64 border-r border-surface-container-high z-40 hidden lg:flex">
@@ -37,8 +37,8 @@ export default function SideNav() {
       </nav>
       <div className="p-6">
         <button
-          className="w-full bg-primary text-white py-3 rounded-xl font-semibold shadow-sm hover:opacity-90 transition-all"
-          onClick={() => setCurrentScreen('intake')}
+          className="w-full bg-primary text-white py-3 rounded-xl font-semibold shadow-sm hover:opacity-90 transition-all cursor-pointer"
+          onClick={() => resetAnalysis()}
         >
           New Analysis
         </button>
