@@ -61,24 +61,53 @@ function cleanDrugName(rawName) {
   
   let cleaned = rawName.trim();
   
+  if (cleaned.includes('/') && cleaned.includes('MG')) {
+    const ingredients = [];
+    const ingredientMatches = cleaned.match(/([a-zA-Z]+(?:\s+[a-zA-Z]+)?)\s+\d+(?:\.\d+)?\s*(?:MG|MCG|ML|G)/gi);
+    
+    if (ingredientMatches) {
+      for (const match of ingredientMatches) {
+        const ingredientName = match.replace(/\d+(?:\.\d+)?\s*(?:MG|MCG|ML|G)/gi, '').trim();
+        if (ingredientName.length > 2) {
+          const capitalized = ingredientName
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
+          ingredients.push(capitalized);
+        }
+      }
+      
+      if (ingredients.length > 0) {
+        return ingredients.slice(0, 3).join(' + ');
+      }
+    }
+  }
+  
   cleaned = cleaned.replace(/^\d+\s*\(|\)\s*\/\s*\d+.*$/g, '');
   cleaned = cleaned.replace(/\d+\s*\(.*?\)\s*/g, '');
   cleaned = cleaned.replace(/\(\s*Pack\s*\[.*?\]/gi, '');
+  cleaned = cleaned.replace(/\[\s*Pack\s*\]/gi, '');
   cleaned = cleaned.replace(/\[.*?\]/g, '');
   cleaned = cleaned.replace(/\d+(?:\.\d+)?\s*(?:MG|Mcg|ML|G|IU|MEQ|%)[^\s]*/gi, '');
-  cleaned = cleaned.replace(/\s*(?:Oral|Tablet|Capsule|Injection|Solution|Cream|Patch|mg|ml)\b/gi, '');
-  cleaned = cleaned.replace(/\s*\/\s*/g, '/');
+  cleaned = cleaned.replace(/\s*(?:Oral|Tablet|Capsule|Injection|Solution|Cream|Patch)\b/gi, '');
+  cleaned = cleaned.replace(/\s*\/+\s*/g, ' + ');
   cleaned = cleaned.replace(/\s+/g, ' ');
   
-  const parts = cleaned.split('/').map(p => p.trim()).filter(p => p && p.length > 1);
+  const parts = cleaned.split('+').map(p => p.trim()).filter(p => p && p.length > 1);
   if (parts.length > 0) {
-    cleaned = parts[0];
+    if (parts.length > 3) {
+      cleaned = parts.slice(0, 3).join(' + ') + ' + others';
+    } else {
+      cleaned = parts.join(' + ');
+    }
   }
   
   cleaned = cleaned
     .split(' ')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
+  
+  cleaned = cleaned.replace(/\s+[a-z]\s+/g, ' ');
   
   return cleaned.trim();
 }
@@ -111,29 +140,36 @@ export async function extractMedicationsFromText(text) {
   }
 
   try {
-    const systemPrompt = `You are a medical prescription parser. Extract ONLY the clean drug names from prescription text.
+    const systemPrompt = `You are a medical prescription parser. Extract medication names in a clean, user-friendly format.
 
-IMPORTANT RULES:
-1. Return ONLY the main drug name, nothing else
-2. For combination drugs (like "Acetaminophen/Aspirin/Caffeine"), return "Acetaminophen" only
-3. DO NOT include: dosages, mg, mg amounts, tablet, capsule, oral, pack, brand names in brackets
-4. DO NOT include prescription numbers, patient info, or addresses
-5. Proper Title Case: "Acetaminophen", NOT "ACETAMINOPHEN" or "acetaminophen"
-6. If the text has "100 (acetaminophen 250 MG / aspirin 250 MG)", return just: Acetaminophen
+CRITICAL RULES:
+1. For COMBINATION drugs (multiple ingredients like cough syrups), return the ingredients joined by " + "
+   - Example: "acetaminophen + dextromethorphan + doxylamine"
+   - Example: "acetaminophen + aspirin + caffeine"
+2. For SINGLE drugs, return just the drug name
+   - Example: "Lisinopril", "Metformin", "Aspirin"
+3. NEVER return raw prescription text, dosages in parentheses, or pack information
+4. NEVER return text like "100 (acetaminophen 250 MG / aspirin...)" - extract the drug names only
+5. Proper Title Case: "Acetaminophen", "Metformin", "Dextromethorphan"
+6. For cough/cold combinations, extract ALL active ingredients
 
-Examples:
-- Input: "100 (acetaminophen 250 MG / aspirin 250 MG / caffeine 65 MG Oral Tablet [Excedrin])" → Output: Acetaminophen
-- Input: "Lisinopril 10mg once daily" → Output: Lisinopril
-- Input: "Metformin 500mg twice daily with food" → Output: Metformin
+Examples of CORRECT output:
+- "Acetaminophen + Dextromethorphan + Doxylamine" (from cough syrup)
+- "Acetaminophen" (from single drug)
+- "Metformin + Lisinopril" (from two drugs)
+- "Aspirin + Clopidogrel" (from blood thinner combo)
 
-Return valid JSON array only:
-[{"name": "CleanDrugName", "dosage": "dosage if clearly stated like '500mg' or 'Not specified'", "timing": "time/schedule if mentioned or empty string", "category": "General"}]
+Examples of WRONG output (DO NOT DO THIS):
+- "100 (acetaminophen 250 MG / aspirin 250 MG / caffeine 65 MG Oral Tablet [Excedrin])"
+- "1 (acetaminophen 33.3 MG/ML / dextromethorphan hydrobromide 1 MG/ML)"
+- "{1 (...Pack"
 
-Common drug names to look for: metformin, lisinopril, atorvastatin, amlodipine, omeprazole, aspirin, ibuprofen, amoxicillin, metformin, warfarin, etc.
+Return valid JSON array:
+[{"name": "Drug Name(s)", "dosage": "Not specified", "timing": "", "category": "General"}]
 
-Return ONLY valid JSON array, no explanations, no markdown formatting.`;
+Return ONLY valid JSON array, no explanations, no markdown.`;
 
-    const userPrompt = `Extract clean medication names from this prescription:\n\n${text.substring(0, 2000)}\n\nReturn JSON array with cleaned drug names only.`;
+    const userPrompt = `Parse this prescription and extract clean medication names:\n\n${text.substring(0, 2000)}\n\nReturn JSON array with properly formatted drug names.`;
 
     const groq = getGroqClient();
     if (!groq) {
