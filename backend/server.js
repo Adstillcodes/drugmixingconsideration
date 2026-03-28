@@ -26,7 +26,7 @@ app.post('/api/analyze', analyzeInteractions);
 app.get('/api/drugs/search', searchDrugs);
 app.post('/api/ocr', processOCR);
 
-app.use((err, req, res) => {
+app.use((err, req, res, next) => {
   console.error('Server Error:', err);
   res.status(500).json({
     success: false,
