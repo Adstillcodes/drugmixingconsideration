@@ -25,7 +25,7 @@ Build a web application that:
 | Styling | Tailwind CSS v4 | Design system |
 | OCR | Tesseract.js | Prescription text extraction |
 | Drug API | RxLabelGuard | FDA drug interaction data |
-| AI | WebLLM (Llama 3.2) | Local AI analysis |
+| AI | Groq AI
 | Icons | Material Symbols | Iconography |
 
 ---
