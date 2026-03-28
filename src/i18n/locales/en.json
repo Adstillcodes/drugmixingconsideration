@@ -1,0 +1,356 @@
+{
+  "app": {
+    "name": "Dose-Wise",
+    "tagline": "Your safety is why we ask this."
+  },
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "contact": "Contact",
+    "language": "Language",
+    "selectLanguage": "Select Language"
+  },
+  "intake": {
+    "hero": {
+      "title": "Let's keep your medications in harmony",
+      "subtitle": "Our Friendly Audit tool helps you understand how your treatments interact, keeping your well-being at the heart of everything."
+    },
+    "prescriptionType": {
+      "label": "Step 1: Prescription Type",
+      "self": "Self-prescribed",
+      "active": "Active prescription"
+    },
+    "demographics": {
+      "label": "Step 2: Tell us a bit about yourself",
+      "gender": "Biological Gender",
+      "genderPlaceholder": "Select gender",
+      "female": "Female",
+      "male": "Male",
+      "other": "Prefer not to say",
+      "age": "Age",
+      "agePlaceholder": "Years",
+      "pregnant": {
+        "title": "Are you currently pregnant?",
+        "subtitle": "Safety for you and your baby is our top priority."
+      },
+      "lactating": {
+        "title": "Are you currently breastfeeding?",
+        "subtitle": "Some medications can pass through breast milk."
+      }
+    },
+    "medications": {
+      "label": "Step 3: Medications",
+      "searchPlaceholder": "Search drug name (e.g. Lisinopril, Ibuprofen)",
+      "addMedication": "Add medication",
+      "removeMedication": "Remove"
+    },
+    "conditions": {
+      "label": "Step 4: Pre-existing Conditions",
+      "searchPlaceholder": "Search health conditions (e.g. Diabetes, Heart Disease)"
+    },
+    "upload": {
+      "label": "Step 5: Upload Prescription",
+      "labelRequired": "Step 5: Upload Prescription (Required for Active Prescription)",
+      "labelOptional": "Step 5: Upload Prescription (Optional)",
+      "title": "Snap or Drag Prescription",
+      "subtitle": "Upload a photo or PDF of your prescription.",
+      "chooseFile": "Choose File",
+      "processing": "Processing Prescription...",
+      "status": {
+        "initializing": "Initializing AI model...",
+        "loading": "Loading AI model...",
+        "processing": "Processing prescription...",
+        "extracting": "Extracting medications with AI...",
+        "success": "Found {{count}} medication(s) from prescription",
+        "noMedications": "No medications detected in prescription",
+        "failed": "Failed to process prescription"
+      },
+      "extractedMedications": "Extracted Medications",
+      "aiExtracted": "AI-Extracted Medications",
+      "aiExtractedSubtitle": "These medications were automatically extracted from your prescription and added to your analysis."
+    },
+    "submit": {
+      "runAnalysis": "Run Analysis",
+      "uploadToContinue": "Upload Prescription to Continue",
+      "privacyNote": "Your medical data is encrypted and HIPAA compliant."
+    },
+    "validation": {
+      "minMedications": "Please add at least 2 medications to analyze interactions.",
+      "demographicsRequired": "Please fill in your gender and age.",
+      "prescriptionRequired": "Please upload your prescription file when selecting 'Active Prescription'."
+    }
+  },
+  "processing": {
+    "title": "Analyzing medication combinations...",
+    "subtitle": "Please wait while we analyze your medications",
+    "downloadingAI": "Downloading AI Model...",
+    "downloadingAISubtitle": "First-time setup for intelligent analysis",
+    "analyzing": "Analyzing {{count}} medications",
+    "complete": "Analysis complete!",
+    "privacyNote": "Your data is being processed locally and securely",
+    "noMedications": {
+      "title": "No medications provided",
+      "button": "Go back to Intake Form"
+    }
+  },
+  "results": {
+    "header": {
+      "title": "Here's what we found for your safety",
+      "analysisComplete": "Analysis completed",
+      "analysisCompleteBadge": "Analysis Complete"
+    },
+    "noAnalysis": {
+      "title": "No Analysis Available",
+      "message": "No analysis data available. Please complete the intake form and run the analysis.",
+      "button": "Go to Intake Form"
+    },
+    "riskSummary": {
+      "title": "Interaction Risk Index",
+      "percentage": "{{value}}%",
+      "riskLevel": {
+        "safe": "Safe",
+        "low": "Low Risk",
+        "moderate": "Moderate",
+        "high": "High Risk",
+        "critical": "Critical"
+      },
+      "safeMessage": "Your medications appear safe",
+      "attentionMessage": "Attention Required",
+      "safeSubtext": "No significant drug interactions detected between your medications.",
+      "attentionSubtext": "Some medication combinations may require medical attention."
+    },
+    "medications": {
+      "title": "Analyzed Medications",
+      "count": "{{count}} ITEMS",
+      "fromPrescription": "From Prescription",
+      "aiExtracted": "{{count}} medication(s) extracted from prescription using AI",
+      "healthContext": "Health Context"
+    },
+    "interactions": {
+      "title": "Detected Interactions",
+      "found": "{{count}} Found",
+      "viewDetails": "View Details",
+      "noInteractions": {
+        "title": "No Interactions Found",
+        "message": "Your current medication combination appears to be safe based on our analysis. Continue taking your medications as prescribed."
+      }
+    },
+    "severity": {
+      "contraindicated": "Contraindicated",
+      "major": "Major",
+      "moderate": "Moderate",
+      "minor": "Minor",
+      "unknown": "Unknown"
+    },
+    "aiAnalysis": {
+      "title": "AI Analysis Summary",
+      "keyConcerns": "Key Concerns"
+    },
+    "actions": {
+      "viewRecommendations": "View Recommendations",
+      "startNew": "Start New Analysis",
+      "print": "Print Report",
+      "download": "Download Report"
+    }
+  },
+  "deepDive": {
+    "header": {
+      "safetyBanner": "Your safety matters",
+      "backToSummary": "Back to Summary",
+      "title": "Detailed Interaction Analysis",
+      "subtitle": "In-depth clinical analysis of the interaction between {{drug1}} and {{drug2}}.",
+      "privacy": "Anonymous Mode"
+    },
+    "severity": {
+      "critical": "Do Not Combine",
+      "high": "High Risk",
+      "moderate": "Monitor Closely",
+      "low": "Generally Safe",
+      "unknown": "Limited Data"
+    },
+    "clinical": {
+      "title": "Clinical Analysis"
+    },
+    "mechanism": {
+      "title": "Mechanism of Interaction"
+    },
+    "personalized": {
+      "title": "Personalized Context"
+    },
+    "recommendations": {
+      "title": "Safety Recommendations"
+    },
+    "riskAssessment": {
+      "title": "Risk Assessment",
+      "severityLevel": "Severity Level",
+      "riskCategory": "Risk Category",
+      "evidence": "Evidence",
+      "evidenceValue": "FDA Label Data"
+    },
+    "aiAnalysis": {
+      "title": "AI Analysis"
+    },
+    "consultation": {
+      "title": "Need Professional Help?",
+      "subtitle": "Connect with a clinical pharmacist to discuss how this interaction applies to your specific health history.",
+      "button": "Consult a Pharmacist"
+    },
+    "privacy": {
+      "title": "Privacy",
+      "message": "Your interaction data is processed locally. Your data is never stored on our servers."
+    },
+    "continue": {
+      "button": "View Complete Recommendations"
+    }
+  },
+  "recommendations": {
+    "header": {
+      "title": "Your Path to Safety",
+      "subtitle": "Based on our analysis of your medication combination, here are the recommended next steps to ensure your safety and well-being."
+    },
+    "actionPlan": {
+      "title": "What You Should Do Next"
+    },
+    "priority": {
+      "urgent": "Priority: Urgent",
+      "moderate": "Priority: Moderate"
+    },
+    "steps": {
+      "contraindicated": {
+        "1": { "title": "STOP Taking These Together", "desc": "These medications should never be combined. Stop taking both and seek immediate medical attention." },
+        "2": { "title": "Contact Your Doctor", "desc": "Call your prescribing physician or healthcare provider immediately to discuss alternative options." },
+        "3": { "title": "Seek Emergency Care", "desc": "If you are currently taking both medications, consider visiting an urgent care or emergency department." }
+      },
+      "major": {
+        "1": { "title": "Consult Your Physician", "desc": "Schedule an appointment with your doctor immediately to discuss this interaction and possible alternatives." },
+        "2": { "title": "Do Not Stop Abruptly", "desc": "Do not stop taking any medications without medical supervision. Some medications require gradual discontinuation." },
+        "3": { "title": "Consider Alternatives", "desc": "Ask your doctor about safer alternatives that achieve the same therapeutic goals without the interaction risk." }
+      },
+      "moderate": {
+        "1": { "title": "Monitor for Symptoms", "desc": "Pay close attention to any unusual symptoms or side effects while taking these medications together." },
+        "2": { "title": "Consider Timing Separation", "desc": "Ask your pharmacist if taking these medications at different times of day could reduce the interaction risk." },
+        "3": { "title": "Schedule a Review", "desc": "Schedule a medication review with your doctor or pharmacist within the next week to discuss this combination." }
+      },
+      "minor": {
+        "1": { "title": "Be Aware", "desc": "While generally safe, be aware of any mild side effects that may occur from this combination." },
+        "2": { "title": "Regular Monitoring", "desc": "Continue with your regular check-ups. Inform your doctor about all medications you are taking." }
+      }
+    },
+    "aiAdvice": {
+      "title": "AI Recommendations"
+    },
+    "actions": {
+      "share": "Share with Your Doctor",
+      "print": "Print Report",
+      "download": "Download Report"
+    },
+    "trust": {
+      "hipaa": "HIPAA Compliant",
+      "hipaaSub": "Your data is secure",
+      "fda": "FDA Verified",
+      "fdaSub": "Based on drug labels"
+    },
+    "disclaimer": {
+      "title": "Important Disclaimer",
+      "text": "This analysis is for informational purposes only and does not replace professional medical advice. Always consult with a qualified healthcare provider before making any changes to your medication regimen. If you are experiencing any adverse effects, seek medical attention immediately."
+    },
+    "navigation": {
+      "back": "Back to Results",
+      "newAnalysis": "Start New Analysis"
+    },
+    "noData": {
+      "title": "No Data Provided",
+      "message": "No medications were provided for analysis. Please go back to the intake form and add at least 2 medications.",
+      "button": "Go back to Intake Form"
+    }
+  },
+  "common": {
+    "yes": "Yes",
+    "no": "No",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "close": "Close",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "continue": "Continue",
+    "warning": "Warning",
+    "urgent": "Urgent"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "noInternet": "Please check your internet connection.",
+    "serverError": "Server error. Please try again later."
+  },
+  "privacyPolicy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: March 28, 2026",
+    "backToHome": "Back to Home",
+    "introduction": {
+      "title": "1. Introduction",
+      "content": "Welcome to Dose-Wise. We respect your privacy and are committed to protecting your personal data. This privacy policy explains how we collect, use, disclose, and safeguard your information when you use our prescription drug interaction analyzer service."
+    },
+    "informationWeCollect": {
+      "title": "2. Information We Collect",
+      "personalInfo": {
+        "subtitle": "2.1 Personal Information",
+        "desc": "We may collect the following personal information when you use Dose-Wise:",
+        "items": ["Name and contact information", "Age and gender", "Medical conditions and health information", "List of medications you are taking"]
+      },
+      "prescriptionData": {
+        "subtitle": "2.2 Prescription Data",
+        "desc": "If you upload prescription images or documents, we process these to extract medication information. Uploaded images are processed and not permanently stored on our servers."
+      },
+      "usageData": {
+        "subtitle": "2.3 Usage Data",
+        "desc": "We may collect information about how you access and use our service, including your IP address, browser type, pages visited, and time spent on pages."
+      }
+    },
+    "howWeUse": {
+      "title": "3. How We Use Your Information",
+      "desc": "We use the collected information for the following purposes:",
+      "items": ["To provide and maintain our drug interaction analysis service", "To analyze prescriptions and extract medication information", "To generate personalized drug interaction reports", "To notify you about changes to our service", "To provide customer support", "To monitor the usage of our service", "To detect, prevent, and address technical issues"]
+    },
+    "dataSecurity": {
+      "title": "4. Data Security",
+      "content": "The security of your data is important to us. We strive to use commercially acceptable means to protect your personal information. However, no method of transmission over the Internet or electronic storage is 100% secure and we cannot guarantee absolute security. All data transmission is encrypted using industry-standard SSL/TLS encryption."
+    },
+    "dataRetention": {
+      "title": "5. Data Retention",
+      "content": "We will retain your personal data only for as long as necessary to fulfill the purposes for which it was collected, including to satisfy any legal, accounting, or reporting requirements. Prescription images are processed in real-time and are not stored on our servers after processing is complete."
+    },
+    "disclosure": {
+      "title": "6. Disclosure of Data",
+      "desc": "We do not sell, trade, or rent your personal identification information to third parties. We may disclose your data in the following situations:",
+      "items": ["To comply with a legal obligation", "To protect and defend the rights or property of Dose-Wise", "To prevent or investigate possible wrongdoing in connection with the service", "To protect the personal safety of users of the service or the public", "To protect against legal liability"]
+    },
+    "thirdParty": {
+      "title": "7. Third-Party Services",
+      "content": "We may employ third-party companies and individuals to facilitate our service, provide service on our behalf, perform service-related services, or assist us in analyzing how our service is used. These third parties have access to your personal data only to perform these tasks on our behalf and are obligated not to disclose or use it for any other purpose."
+    },
+    "yourRights": {
+      "title": "8. Your Rights",
+      "desc": "Depending on your location, you may have certain rights regarding your personal data, including:",
+      "items": ["The right to access the personal data we hold about you", "The right to request correction of inaccurate data", "The right to request deletion of your personal data", "The right to object to or restrict processing of your data", "The right to data portability", "The right to withdraw consent"]
+    },
+    "childrensPrivacy": {
+      "title": "9. Children's Privacy",
+      "content": "Our service is not intended for use by children under the age of 18. We do not knowingly collect personally identifiable information from children under 18. If you are a parent or guardian and you are aware that your child has provided us with personal data, please contact us so that we can take necessary action."
+    },
+    "changes": {
+      "title": "10. Changes to This Privacy Policy",
+      "content": "We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the \"Last updated\" date. You are advised to review this Privacy Policy periodically for any changes."
+    },
+    "contact": {
+      "title": "11. Contact Us",
+      "desc": "If you have any questions about this Privacy Policy, please contact us:",
+      "items": ["Email: privacy@dosewise.com", "Website: www.dosewise.com"]
+    },
+    "footer": "© 2026 Dose-Wise. All rights reserved."
+  }
+}
