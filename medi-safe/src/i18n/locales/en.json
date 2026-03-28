@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "MediSafe",
+    "name": "Dose-Wise",
     "tagline": "Your safety is why we ask this."
   },
   "nav": {
@@ -52,8 +52,8 @@
       "label": "Step 5: Upload Prescription",
       "labelRequired": "Step 5: Upload Prescription (Required for Active Prescription)",
       "labelOptional": "Step 5: Upload Prescription (Optional)",
-      "title": "Snap or Drag File",
-      "subtitle": "Upload a photo of your prescription for an even faster analysis.",
+      "title": "Snap or Drag Prescription",
+      "subtitle": "Upload a photo or PDF of your prescription.",
       "chooseFile": "Choose File",
       "processing": "Processing Prescription...",
       "status": {
@@ -70,7 +70,7 @@
       "aiExtractedSubtitle": "These medications were automatically extracted from your prescription and added to your analysis."
     },
     "submit": {
-      "runAnalysis": "Run Friendly Analysis",
+      "runAnalysis": "Run Analysis",
       "uploadToContinue": "Upload Prescription to Continue",
       "privacyNote": "Your medical data is encrypted and HIPAA compliant."
     },
@@ -97,8 +97,12 @@
     "header": {
       "title": "Here's what we found for your safety",
       "analysisComplete": "Analysis completed",
-      "noAnalysis": "No analysis available. Please complete the intake form.",
       "analysisCompleteBadge": "Analysis Complete"
+    },
+    "noAnalysis": {
+      "title": "No Analysis Available",
+      "message": "No analysis data available. Please complete the intake form and run the analysis.",
+      "button": "Go to Intake Form"
     },
     "riskSummary": {
       "title": "Interaction Risk Index",

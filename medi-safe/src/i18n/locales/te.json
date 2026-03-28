@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "MediSafe",
+    "name": "Dose-Wise",
     "tagline": " మీ భద్రతే మనం ఇది చేసే కారణం."
   },
   "nav": {
@@ -70,7 +70,7 @@
       "aiExtractedSubtitle": "These medications were automatically extracted from your prescription and added to your analysis."
     },
     "submit": {
-      "runAnalysis": "Run Friendly Analysis",
+      "runAnalysis": "Run Analysis",
       "uploadToContinue": "Upload Prescription to Continue",
       "privacyNote": "Your medical data is encrypted and HIPAA compliant."
     },

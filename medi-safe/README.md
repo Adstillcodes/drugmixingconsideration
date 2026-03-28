@@ -1,16 +1,63 @@
-# React + Vite
+# Dose-Wise - Drug Interaction Analyzer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A web application for analyzing prescription drug interactions with AI-powered insights.
 
-Currently, two official plugins are available:
+## Quick Start
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+### 1. Setup Backend
 
-## React Compiler
+```bash
+cd backend
+npm install
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Edit `backend/.env` and add your Groq API key:
+```
+GROQ_API_KEY=gsk_your_key_here
+```
 
-## Expanding the ESLint configuration
+Start the backend:
+```bash
+npm start
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 2. Setup Frontend
+
+```bash
+# From project root
+npm install
+npm run dev
+```
+
+### 3. Open Browser
+
+- Frontend: http://localhost:5173
+- Backend: http://localhost:3001
+
+## Getting Started
+
+1. **Select Prescription Type**: Choose "Self-prescribed" or "Active prescription"
+2. **Enter Demographics**: Gender and age
+3. **Add Medications**: Search and add your medications
+4. **Upload Prescription** (optional): Upload a photo for AI extraction
+5. **Run Analysis**: Get drug interaction results with AI insights
+
+## Tech Stack
+
+- **Frontend**: React, Tailwind CSS, i18next
+- **Backend**: Express.js, Node.js
+- **APIs**: Groq (AI), RxNorm (drug search)
+- **OCR**: Tesseract.js
+
+## Backend Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/health` | GET | Health check |
+| `/api/analyze` | POST | Analyze drug interactions |
+| `/api/drugs/search` | GET | Search drugs |
+| `/api/ocr` | POST | Extract text from prescription |
+
+## License
+
+MIT

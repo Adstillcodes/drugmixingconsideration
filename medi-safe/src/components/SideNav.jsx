@@ -18,7 +18,7 @@ export default function SideNav() {
         <p className="text-[10px] text-on-surface/50 uppercase tracking-widest mt-1">System Active • FDA Verified</p>
       </div>
       <nav className="flex-1">
-        {navItems.map((item, index) => (
+        {navItems.map((item) => (
           <div
             key={item.id}
             className={`py-3 pl-6 my-1 transition-transform flex items-center gap-3 cursor-pointer ${
@@ -45,12 +45,10 @@ export default function SideNav() {
       </div>
       <div className="p-4 border-t border-surface-container-high mt-auto">
         <div className="text-on-surface/70 py-2 px-2 flex items-center gap-3 cursor-pointer hover:bg-surface-container-high rounded-lg transition-all">
-          <span className="material-symbols-outlined" data-icon="settings">settings</span>
-          <span className="text-sm">Settings</span>
+          
         </div>
         <div className="text-on-surface/70 py-2 px-2 flex items-center gap-3 cursor-pointer hover:bg-surface-container-high rounded-lg transition-all">
-          <span className="material-symbols-outlined" data-icon="help_outline">help_outline</span>
-          <span className="text-sm">Help</span>
+          
         </div>
       </div>
     </aside>

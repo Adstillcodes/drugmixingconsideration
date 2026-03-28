@@ -1,9 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
-import { processUploadedFile } from '../services/ocr';
-import { extractMedicationsFromText, initializeWebLLM } from '../services/prescriptionExtractor';
-import { searchDrugs } from '../services/drugApi';
+import { searchDrugs, processOCR } from '../services/api';
 
 const commonConditions = [
   'Diabetes Type 1', 'Diabetes Type 2', 'Hypertension', 'Heart Disease',
@@ -17,6 +15,14 @@ const commonDosages = [
   '10mcg', '50mcg', '100mcg',
   '5ml', '10ml',
   '1 tablet', '2 tablets', 'As directed'
+];
+
+const commonTimings = [
+  '06:00', '07:00', '08:00', '09:00', '10:00', '11:00',
+  '12:00', '13:00', '14:00', '15:00', '16:00', '17:00',
+  '18:00', '19:00', '20:00', '21:00', '22:00', '23:00',
+  'Before breakfast', 'After breakfast', 'Before lunch', 'After lunch',
+  'Before dinner', 'After dinner', 'At bedtime', 'As needed'
 ];
 
 export default function IntakeForm() {
@@ -37,6 +43,7 @@ export default function IntakeForm() {
   const [editableMedications, setEditableMedications] = useState(userData.medications);
   const [editableConditions, setEditableConditions] = useState(userData.conditions);
   const [editingDosage, setEditingDosage] = useState(null);
+  const [editingTiming, setEditingTiming] = useState(null);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [extractedMedications, setExtractedMedications] = useState([]);
   const [isProcessingPrescription, setIsProcessingPrescription] = useState(false);
@@ -63,7 +70,8 @@ export default function IntakeForm() {
     setIsSearchingDrugs(true);
     searchTimeoutRef.current = setTimeout(async () => {
       try {
-        const results = await searchDrugs(drugSearch, 15);
+        const response = await searchDrugs(drugSearch, 15);
+        const results = response.drugs || [];
         const filteredResults = results.filter(
           (drug) => !editableMedications.some((m) => m.name.toLowerCase() === drug.name.toLowerCase())
         );
@@ -90,6 +98,7 @@ export default function IntakeForm() {
       id: Date.now(),
       dosage: drug.dosage || (requiresDosage ? '' : 'As prescribed'),
       requiresDosage: requiresDosage,
+      timing: drug.timing || '',
     };
     setEditableMedications((prev) => [...prev, newMed]);
     setDrugSearch('');
@@ -101,6 +110,7 @@ export default function IntakeForm() {
     const newMed = {
       name: drug.name,
       dosage: drug.dosage && drug.dosage !== 'Not specified' ? drug.dosage : 'As prescribed',
+      timing: drug.timing || '',
       category: drug.category,
       id: `extracted-${Date.now()}-${Math.random()}`,
       source: 'prescription',
@@ -127,6 +137,13 @@ export default function IntakeForm() {
     setEditingDosage(null);
   }, []);
 
+  const handleTimingChange = useCallback((drugName, newTiming) => {
+    setEditableMedications((prev) =>
+      prev.map((m) => (m.name === drugName ? { ...m, timing: newTiming } : m))
+    );
+    setEditingTiming(null);
+  }, []);
+
   const handleAddCondition = useCallback((condition) => {
     setEditableConditions((prev) => {
       if (prev.includes(condition)) return prev;
@@ -140,35 +157,41 @@ export default function IntakeForm() {
     setEditableConditions((prev) => prev.filter((c) => c !== condition));
   }, []);
 
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result;
+        if (file.type === 'application/pdf') {
+          const base64 = result.split(',')[1];
+          resolve(`data:application/pdf;base64,${base64}`);
+        } else {
+          resolve(result);
+        }
+      };
+      reader.onerror = (error) => reject(error);
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     setUploadedFile(file);
     setIsProcessingPrescription(true);
-    setPrescriptionProcessingStatus(t('intake.upload.status.initializing'));
+    setPrescriptionProcessingStatus(t('intake.upload.status.processing'));
 
     try {
-      await initializeWebLLM((progress) => {
-        setPrescriptionProcessingStatus(`${t('intake.upload.status.loading')} ${progress}%`);
-      });
-
-      setPrescriptionProcessingStatus(t('intake.upload.status.processing'));
-      const ocrResult = await processUploadedFile(file);
+      const base64 = await fileToBase64(file);
+      setPrescriptionProcessingStatus(t('intake.upload.status.extracting'));
+      
+      const ocrResult = await processOCR(base64);
 
       let extractedMeds = [];
 
-      if (ocrResult.success && ocrResult.rawText) {
-        setPrescriptionProcessingStatus(t('intake.upload.status.extracting'));
-        const aiResult = await extractMedicationsFromText(ocrResult.rawText);
-
-        if (aiResult.success && aiResult.drugs.length > 0) {
-          extractedMeds = aiResult.drugs;
-        } else if (ocrResult.drugs && ocrResult.drugs.length > 0) {
-          extractedMeds = ocrResult.drugs;
-        }
-      } else if (ocrResult.drugs && ocrResult.drugs.length > 0) {
-        extractedMeds = ocrResult.drugs;
+      if (ocrResult.success && ocrResult.medications) {
+        extractedMeds = ocrResult.medications;
       }
 
       if (extractedMeds.length > 0) {
@@ -482,20 +505,18 @@ export default function IntakeForm() {
                     <span className="font-medium">{med.name}</span>
 
                     {editingDosage === med.name ? (
-                      <div className="flex items-center gap-1">
-                        <select
-                          className="bg-white/90 border border-secondary-container/50 rounded px-2 py-1 text-sm min-w-[80px]"
-                          value={med.dosage || ''}
-                          onChange={(e) => handleDosageChange(med.name, e.target.value)}
-                          onBlur={() => setEditingDosage(null)}
-                          autoFocus
-                        >
-                          <option value="">Dosage</option>
-                          {commonDosages.map((d) => (
-                            <option key={d} value={d}>{d}</option>
-                          ))}
-                        </select>
-                      </div>
+                      <select
+                        className="bg-white/90 border border-secondary-container/50 rounded px-2 py-1 text-sm min-w-[80px]"
+                        value={med.dosage || ''}
+                        onChange={(e) => handleDosageChange(med.name, e.target.value)}
+                        onBlur={() => setEditingDosage(null)}
+                        autoFocus
+                      >
+                        <option value="">Dosage</option>
+                        {commonDosages.map((d) => (
+                          <option key={d} value={d}>{d}</option>
+                        ))}
+                      </select>
                     ) : (
                       <button
                         type="button"
@@ -507,6 +528,32 @@ export default function IntakeForm() {
                         onClick={() => setEditingDosage(med.name)}
                       >
                         {med.dosage || (med.requiresDosage ? '+ Dosage' : med.dosage)}
+                      </button>
+                    )}
+
+                    {editingTiming === med.name ? (
+                      <select
+                        className="bg-white/90 border border-secondary-container/50 rounded px-2 py-1 text-sm min-w-[100px]"
+                        value={med.timing || ''}
+                        onChange={(e) => handleTimingChange(med.name, e.target.value)}
+                        onBlur={() => setEditingTiming(null)}
+                        autoFocus
+                      >
+                        <option value="">Time</option>
+                        {commonTimings.map((t) => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <button
+                        type="button"
+                        className={`text-sm px-2 py-0.5 rounded transition-colors ${
+                          med.timing ? 'bg-primary/20 text-primary' : 'opacity-50 hover:opacity-100 bg-white/10'
+                        }`}
+                        onClick={() => setEditingTiming(med.name)}
+                        title="Click to set timing"
+                      >
+                        {med.timing || '⏰'}
                       </button>
                     )}
 
@@ -602,7 +649,7 @@ export default function IntakeForm() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
+                  accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"
                   className="hidden"
                   onChange={handleFileUpload}
                 />

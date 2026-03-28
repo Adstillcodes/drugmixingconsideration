@@ -1,7 +1,28 @@
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
-import { getRiskColor, getSeverityColor } from '../services/rxlabelguard';
 import { downloadReport, printReport } from '../services/reportGenerator';
+
+function getRiskColor(level) {
+  const colors = {
+    safe: '#2ECC71',
+    low: '#2ECC71',
+    moderate: '#E9C46A',
+    high: '#F97316',
+    critical: '#D32F2F',
+  };
+  return colors[level] || colors.safe;
+}
+
+function getSeverityColor(severity) {
+  const colors = {
+    contraindicated: { bg: '#FFEBEE', text: '#D32F2F', border: '#D32F2F' },
+    major: { bg: '#FFCDD2', text: '#C62828', border: '#EF5350' },
+    moderate: { bg: '#FFF8E1', text: '#F57F17', border: '#FFB74D' },
+    minor: { bg: '#E8F5E9', text: '#2E7D32', border: '#81C784' },
+    unknown: { bg: '#ECEFF1', text: '#546E7A', border: '#90A4AE' },
+  };
+  return colors[severity] || colors.unknown;
+}
 
 export default function ResultsDashboard() {
   const { t } = useTranslation();
@@ -34,11 +55,11 @@ export default function ResultsDashboard() {
 
   const getRiskLabel = (level) => {
     const labels = {
-      safe: t('results.riskLevel.safe'),
-      low: t('results.riskLevel.low'),
-      moderate: t('results.riskLevel.moderate'),
-      high: t('results.riskLevel.high'),
-      critical: t('results.riskLevel.critical'),
+      safe: t('results.riskSummary.riskLevel.safe'),
+      low: t('results.riskSummary.riskLevel.low'),
+      moderate: t('results.riskSummary.riskLevel.moderate'),
+      high: t('results.riskSummary.riskLevel.high'),
+      critical: t('results.riskSummary.riskLevel.critical'),
     };
     return labels[level] || 'Unknown';
   };
@@ -162,7 +183,7 @@ export default function ResultsDashboard() {
                   <div className="mb-4 p-3 bg-primary/5 rounded-xl border border-primary/20 flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
                     <span className="text-sm text-primary font-medium">
-                      {analysisResults.medications.filter(m => m.fromOCR).length} {t('results.medications.aiExtracted')}
+                      {t('results.medications.aiExtracted', { count: analysisResults.medications.filter(m => m.fromOCR).length })}
                     </span>
                   </div>
                 )}
@@ -174,7 +195,7 @@ export default function ResultsDashboard() {
                         <span className="material-symbols-outlined">{med.fromOCR ? 'description' : 'pill'}</span>
                       </div>
                       <div className="flex-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <h4 className="font-bold text-on-surface">{med.name}</h4>
                           {med.fromOCR && (
                             <span className="px-2 py-0.5 bg-success/20 text-success text-[10px] font-bold rounded-full">
@@ -183,6 +204,12 @@ export default function ResultsDashboard() {
                           )}
                         </div>
                         <p className="text-sm text-on-surface-variant">{med.category || 'Medication'} • {med.dosage || 'As directed'}</p>
+                        {med.timing && (
+                          <p className="text-sm text-primary font-medium mt-1 flex items-center gap-1">
+                            <span className="material-symbols-outlined text-xs">schedule</span>
+                            {med.timing}
+                          </p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -337,7 +364,7 @@ export default function ResultsDashboard() {
           {/* Footer */}
           <footer className="mt-12 py-8 border-t border-outline-variant/20 flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="text-on-surface-variant text-sm font-medium">
-              <p>© 2026 MediSafe. All rights reserved.</p>
+              <p>© 2026 Dose-Wise. All rights reserved.</p>
             </div>
             <div className="flex gap-8">
               <button 

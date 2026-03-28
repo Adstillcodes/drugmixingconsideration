@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useCallback } from 'react';
-import { checkDrugInteractions } from '../services/rxlabelguard';
-import { generateAnalysisSummary, initializeAIEngine } from '../services/aiSummary';
+import { analyzeInteractions } from '../services/api';
 
 const AppContext = createContext();
 
@@ -21,8 +20,6 @@ export function AppProvider({ children }) {
   const [selectedInteraction, setSelectedInteraction] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState(0);
-  const [aiDownloadProgress, setAiDownloadProgress] = useState(0);
-  const [isAiDownloading, setIsAiDownloading] = useState(false);
   const [processingMessage, setProcessingMessage] = useState('');
   const [error, setError] = useState(null);
 
@@ -92,16 +89,12 @@ export function AppProvider({ children }) {
 
     try {
       setProcessingStep(10);
-      setProcessingMessage('Connecting to drug database...');
-      await sleep(200);
-
-      setProcessingStep(20);
-      setProcessingMessage('Analyzing medication combinations...');
-      await sleep(200);
+      setProcessingMessage('Connecting to server...');
+      await sleep(300);
 
       setProcessingStep(30);
-      setProcessingMessage('Checking for drug-drug interactions...');
-
+      setProcessingMessage('Analyzing medications...');
+      
       const userContext = {
         gender: userData.gender,
         age: userData.age,
@@ -110,56 +103,33 @@ export function AppProvider({ children }) {
         conditions: conditions || userData.conditions,
       };
 
-      const result = await checkDrugInteractions(medications, userContext);
-
       setProcessingStep(50);
-      setProcessingMessage('Processing results...');
-      await sleep(200);
+      setProcessingMessage('Checking drug interactions...');
+      await sleep(300);
+
+      const result = await analyzeInteractions(medications, userContext);
+
+      setProcessingStep(80);
+      setProcessingMessage('Generating insights...');
+      await sleep(300);
 
       if (!result.success) {
-        throw new Error('Analysis failed');
+        throw new Error(result.error || 'Analysis failed');
       }
-
-      setProcessingStep(60);
-      setProcessingMessage('Initializing AI engine...');
-      
-      setIsAiDownloading(true);
-      setAiDownloadProgress(0);
-      
-      await initializeAIEngine((progress) => {
-        setAiDownloadProgress(progress);
-      });
-
-      setIsAiDownloading(false);
-      setProcessingStep(70);
-      setProcessingMessage('Generating AI-powered insights...');
-      await sleep(200);
-
-      const aiInsights = await generateAnalysisSummary(result, { ...userData, conditions, medications });
-
-      setAiAnalysis(aiInsights);
-
-      setProcessingStep(90);
-      setProcessingMessage('Finalizing report...');
-      await sleep(200);
 
       setProcessingStep(100);
       setProcessingMessage('Analysis complete!');
 
-      setAnalysisResults({
-        ...result,
-        medications: medications,
-        analyzedAt: new Date().toISOString(),
-        userContext: userContext,
-      });
+      setAnalysisResults(result);
+      setAiAnalysis(result.aiAnalysis);
 
-      await sleep(300);
+      await sleep(500);
 
       setIsProcessing(false);
       setCurrentScreen('results');
     } catch (err) {
       console.error('Analysis error:', err);
-      setError('Failed to analyze medications. Please try again.');
+      setError(err.message || 'Failed to analyze medications. Please try again.');
       setIsProcessing(false);
       setCurrentScreen('intake');
     }
@@ -191,8 +161,6 @@ export function AppProvider({ children }) {
         setIsProcessing,
         processingStep,
         processingMessage,
-        aiDownloadProgress,
-        isAiDownloading,
         startAnalysis,
         clearAnalysis,
         resetAnalysis,

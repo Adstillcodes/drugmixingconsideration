@@ -149,8 +149,7 @@ export async function searchDrugs(query, limit = 20) {
     });
 
     return combinedResults.slice(0, limit);
-  } catch (error) {
-    console.warn('OpenFDA API error, using local database:', error);
+  } catch {
     return localMatches;
   }
 }
@@ -170,11 +169,11 @@ async function fetchFromOpenFDA(query) {
 
   try {
     const response = await fetch(
-      `${OPENFDA_DRUG_NAMES_URL}?search=brand_name:${query}*&limit=50&skip=0`
+      `${OPENFDA_DRUG_NAMES_URL}?search=brand_name:${encodeURIComponent(query)}*&limit=50`
     );
 
     if (!response.ok) {
-      throw new Error(`OpenFDA API error: ${response.status}`);
+      return [];
     }
 
     const data = await response.json();
@@ -198,8 +197,7 @@ async function fetchFromOpenFDA(query) {
     }
 
     return [];
-  } catch (error) {
-    console.error('Failed to fetch from OpenFDA:', error);
+  } catch {
     return [];
   }
 }

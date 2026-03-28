@@ -1,43 +1,56 @@
+import html2pdf from 'html2pdf.js';
+
+const getRiskLabel = (level) => {
+  const labels = {
+    safe: 'Safe',
+    low: 'Low Risk',
+    moderate: 'Moderate Risk',
+    high: 'High Risk',
+    critical: 'Critical Risk',
+  };
+  return labels[level] || 'Unknown';
+};
+
+const getRiskColor = (level) => {
+  const colors = {
+    safe: '#2ECC71',
+    low: '#2ECC71',
+    moderate: '#E9C46A',
+    high: '#F97316',
+    critical: '#D32F2F',
+  };
+  return colors[level] || '#2ECC71';
+};
+
+const getSeverityBadgeColor = (severity) => {
+  const colors = {
+    contraindicated: { bg: '#FFEBEE', text: '#D32F2F', border: '#D32F2F' },
+    major: { bg: '#FFCDD2', text: '#C62828', border: '#EF5350' },
+    moderate: { bg: '#FFF8E1', text: '#F57F17', border: '#FFB74D' },
+    minor: { bg: '#E8F5E9', text: '#2E7D32', border: '#81C784' },
+    unknown: { bg: '#ECEFF1', text: '#546E7A', border: '#90A4AE' },
+  };
+  return colors[severity] || colors.unknown;
+};
+
 export function generateReportHTML(analysisResults, aiAnalysis, userData) {
   const { summary, interactions } = analysisResults;
   const riskPercentage = summary?.riskPercentage || 0;
   
-  const getRiskLabel = (level) => {
-    const labels = {
-      safe: 'Safe',
-      low: 'Low Risk',
-      moderate: 'Moderate Risk',
-      high: 'High Risk',
-      critical: 'Critical Risk',
-    };
-    return labels[level] || 'Unknown';
-  };
-
-  const getRiskColor = (level) => {
-    const colors = {
-      safe: '#2ECC71',
-      low: '#2ECC71',
-      moderate: '#E9C46A',
-      high: '#F97316',
-      critical: '#D32F2F',
-    };
-    return colors[level] || '#2ECC71';
-  };
-
-  const getSeverityBadgeColor = (severity) => {
-    const colors = {
-      contraindicated: { bg: '#FFEBEE', text: '#D32F2F', border: '#D32F2F' },
-      major: { bg: '#FFCDD2', text: '#C62828', border: '#EF5350' },
-      moderate: { bg: '#FFF8E1', text: '#F57F17', border: '#FFB74D' },
-      minor: { bg: '#E8F5E9', text: '#2E7D32', border: '#81C784' },
-      unknown: { bg: '#ECEFF1', text: '#546E7A', border: '#90A4AE' },
-    };
-    return colors[severity] || colors.unknown;
-  };
-
   const interactionsHTML = interactions.length > 0 
     ? interactions.map(interaction => {
         const severityColors = getSeverityBadgeColor(interaction.severity);
+        const recommendationsHTML = interaction.recommendations?.length > 0
+          ? `<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid ${severityColors.border}20;">
+              <p style="font-size: 12px; font-weight: 700; color: #888; margin-bottom: 8px;">SAFETY RECOMMENDATIONS:</p>
+              ${interaction.recommendations.map(rec => `
+                <p style="color: #555; font-size: 13px; margin-bottom: 6px; padding-left: 12px; border-left: 3px solid ${severityColors.text};">
+                  ${rec}
+                </p>
+              `).join('')}
+            </div>`
+          : '';
+        
         return `
           <div style="background: ${severityColors.bg}; border: 2px solid ${severityColors.border}; border-radius: 16px; padding: 20px; margin-bottom: 16px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -51,9 +64,10 @@ export function generateReportHTML(analysisResults, aiAnalysis, userData) {
             <p style="color: ${severityColors.text}; font-weight: 600; margin: 0 0 8px 0;">
               ${interaction.risk}
             </p>
-            <p style="color: #555; line-height: 1.6; margin: 0;">
+            <p style="color: #555; line-height: 1.6; margin: 0 0 8px 0;">
               ${interaction.description}
             </p>
+            ${recommendationsHTML}
           </div>
         `;
       }).join('')
@@ -65,7 +79,7 @@ export function generateReportHTML(analysisResults, aiAnalysis, userData) {
       </div>
     `;
 
-  const medicationsHTML = analysisResults.medications.map(med => `
+  const medicationsHTML = (analysisResults.medications || []).map(med => `
     <div style="background: #f8f9fa; border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 12px;">
       <div style="width: 40px; height: 40px; background: ${med.fromOCR ? '#E8F5E9' : '#E3F2FD'}; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
         <span style="font-size: 20px;">${med.fromOCR ? '📄' : '💊'}</span>
@@ -76,6 +90,7 @@ export function generateReportHTML(analysisResults, aiAnalysis, userData) {
           ${med.category || 'Medication'} • ${med.dosage || 'As directed'}
           ${med.fromOCR ? ' • <span style="color: #2E7D32; font-weight: 600;">From Prescription</span>' : ''}
         </p>
+        ${med.timing ? `<p style="color: #E76F51; font-size: 12px; font-weight: 600; margin: 4px 0 0 0;">⏰ ${med.timing}</p>` : ''}
       </div>
     </div>
   `).join('');
@@ -97,12 +112,37 @@ export function generateReportHTML(analysisResults, aiAnalysis, userData) {
     `
     : '';
 
+  const aiAnalysisSection = aiAnalysis ? `
+    <div style="padding: 32px 40px; background: linear-gradient(135deg, #E3F2FD 0%, #F3E5F5 100%);">
+      <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+        <span>🤖</span> AI Analysis Summary
+      </h3>
+      <p style="color: #333; margin-bottom: 16px; line-height: 1.6;">${aiAnalysis.overview || aiAnalysis.summary || ''}</p>
+      ${aiAnalysis.keyConcerns?.length > 0 ? `
+        <div style="background: white; border-radius: 12px; padding: 16px;">
+          <p style="font-weight: 700; color: #666; margin-bottom: 12px;">Key Concerns:</p>
+          ${aiAnalysis.keyConcerns.map(c => `
+            <p style="color: #333; padding-left: 16px; margin-bottom: 8px; border-left: 3px solid #E76F51;">${c}</p>
+          `).join('')}
+        </div>
+      ` : ''}
+      ${aiAnalysis.personalizedAdvice?.length > 0 ? `
+        <div style="background: white; border-radius: 12px; padding: 16px; margin-top: 16px;">
+          <p style="font-weight: 700; color: #666; margin-bottom: 12px;">Recommendations:</p>
+          ${aiAnalysis.personalizedAdvice.map(advice => `
+            <p style="color: #333; padding-left: 16px; margin-bottom: 8px; border-left: 3px solid #2ECC71;">${advice}</p>
+          `).join('')}
+        </div>
+      ` : ''}
+    </div>
+  ` : '';
+
   const html = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>MediSafe Analysis Report</title>
+  <title>Dose-Wise Analysis Report</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1a1a1a; line-height: 1.5; }
@@ -110,13 +150,13 @@ export function generateReportHTML(analysisResults, aiAnalysis, userData) {
   </style>
 </head>
 <body style="background: #f5f5f5; padding: 40px 20px;">
-  <div style="max-width: 800px; margin: 0 auto; background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.1);">
+  <div id="report-content" style="max-width: 800px; margin: 0 auto; background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.1);">
     
     <!-- Header -->
     <div style="background: linear-gradient(135deg, #E76F51 0%, #F4A261 100%); padding: 32px 40px;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
-          <h1 style="color: white; font-size: 28px; font-weight: 800; margin-bottom: 4px;">MediSafe</h1>
+          <h1 style="color: white; font-size: 28px; font-weight: 800; margin-bottom: 4px;">Dose-Wise</h1>
           <p style="color: rgba(255,255,255,0.9); font-size: 14px;">Drug Interaction Analysis Report</p>
         </div>
         <div style="background: rgba(255,255,255,0.2); padding: 12px 20px; border-radius: 12px; text-align: center;">
@@ -182,23 +222,7 @@ export function generateReportHTML(analysisResults, aiAnalysis, userData) {
       ${interactionsHTML}
     </div>
 
-    <!-- AI Analysis Section -->
-    ${aiAnalysis ? `
-    <div style="padding: 32px 40px; background: linear-gradient(135deg, #E3F2FD 0%, #F3E5F5 100%);">
-      <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-        <span>🤖</span> AI Analysis Summary
-      </h3>
-      <p style="color: #333; margin-bottom: 16px; line-height: 1.6;">${aiAnalysis.overview}</p>
-      ${aiAnalysis.keyConcerns?.length > 0 ? `
-        <div style="background: white; border-radius: 12px; padding: 16px;">
-          <p style="font-weight: 700; color: #666; margin-bottom: 12px;">Key Concerns:</p>
-          ${aiAnalysis.keyConcerns.map(c => `
-            <p style="color: #333; padding-left: 16px; margin-bottom: 8px; border-left: 3px solid #E76F51;">${c}</p>
-          `).join('')}
-        </div>
-      ` : ''}
-    </div>
-    ` : ''}
+    ${aiAnalysisSection}
 
     <!-- Disclaimer -->
     <div style="padding: 24px 40px; background: #fff3cd; border-top: 1px solid #ffc107;">
@@ -211,7 +235,7 @@ export function generateReportHTML(analysisResults, aiAnalysis, userData) {
 
     <!-- Footer -->
     <div style="padding: 20px 40px; background: #f5f5f5; text-align: center;">
-      <p style="font-size: 12px; color: #888;">Generated by MediSafe • ${new Date().toLocaleDateString()} • For medical emergencies, call 911</p>
+      <p style="font-size: 12px; color: #888;">Generated by Dose-Wise • ${new Date().toLocaleDateString()} • For medical emergencies, call 911</p>
     </div>
 
   </div>
@@ -222,18 +246,30 @@ export function generateReportHTML(analysisResults, aiAnalysis, userData) {
   return html;
 }
 
-export function downloadReport(analysisResults, aiAnalysis, userData) {
+export async function downloadReport(analysisResults, aiAnalysis, userData) {
   const html = generateReportHTML(analysisResults, aiAnalysis, userData);
-  const blob = new Blob([html], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
   
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `MediSafe_Report_${new Date().toISOString().split('T')[0]}.html`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  const container = document.createElement('div');
+  container.innerHTML = html;
+  container.style.position = 'absolute';
+  container.style.left = '-9999px';
+  document.body.appendChild(container);
+  
+  const element = container.querySelector('#report-content');
+  
+  const options = {
+    margin: 0,
+    filename: `Dose-Wise_Report_${new Date().toISOString().split('T')[0]}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  try {
+    await html2pdf().set(options).from(element).save();
+  } finally {
+    document.body.removeChild(container);
+  }
 }
 
 export function printReport(analysisResults, aiAnalysis, userData) {
