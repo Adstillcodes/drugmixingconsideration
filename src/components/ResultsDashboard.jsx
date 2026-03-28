@@ -47,7 +47,7 @@ export default function ResultsDashboard() {
     setCurrentScreen('alternatives');
   };
 
-  const hasResults = analysisResults && analysisResults.interactions !== undefined;
+  const hasResults = analysisResults && typeof analysisResults === 'object' && Object.keys(analysisResults).length > 0;
   const interactions = hasResults ? analysisResults.interactions : [];
   const summary = hasResults ? analysisResults.summary : null;
   const riskColors = summary ? getRiskColor(summary.riskLevel) : getRiskColor('safe');
