@@ -7,12 +7,14 @@ export async function checkDrugInteractions(drugs, userContext = {}) {
       success: true,
       interactions: [],
       summary: {
-        riskLevel: 'none',
+        riskLevel: 'safe',
         riskScore: 0,
         riskPercentage: 0,
         message: drugs?.length < 2 
           ? 'Add at least 2 medications to check for interactions' 
           : 'No medications provided',
+        allMedicationsChecked: drugs || [],
+        checkedAt: new Date().toISOString(),
       },
     };
   }
@@ -20,8 +22,8 @@ export async function checkDrugInteractions(drugs, userContext = {}) {
   const drugNames = drugs.map(d => typeof d === 'string' ? d : d.name);
 
   if (!API_KEY) {
-    console.log('No API key found, using mock data');
-    return getMockInteractions(drugNames, userContext);
+    console.log('No API key found, using local database');
+    return getInteractionsFromDatabase(drugNames, userContext);
   }
 
   try {
@@ -46,22 +48,32 @@ export async function checkDrugInteractions(drugs, userContext = {}) {
     return formatApiResponse(data, userContext);
   } catch (error) {
     console.error('RxLabelGuard API Error:', error);
-    return getMockInteractions(drugNames, userContext);
+    return getInteractionsFromDatabase(drugNames, userContext);
   }
 }
 
 function formatApiResponse(data, userContext) {
-  const pairs = data.pairs || [];
+  let pairs = [];
+  
+  if (Array.isArray(data)) {
+    pairs = data;
+  } else if (data && typeof data === 'object') {
+    pairs = data.pairs || data.interactions || data.results || [];
+    if (!Array.isArray(pairs)) {
+      pairs = [];
+    }
+  }
   
   const interactions = pairs.map((pair, index) => ({
     id: index + 1,
-    drugs: [pair.drugA, pair.drugB],
-    severity: pair.maxSeverity || 'unknown',
-    risk: pair.interactions?.[0]?.mechanism || 'Potential interaction',
-    description: pair.interactions?.[0]?.evidenceSnippet || generateDescription(pair),
-    mechanism: pair.interactions?.[0]?.mechanism || '',
+    drugs: [pair.drugA || pair.drug1 || pair.drug || `Drug ${index + 1}`, 
+             pair.drugB || pair.drug2 || `Drug ${index + 2}`],
+    severity: pair.severity || pair.maxSeverity || pair.level || 'unknown',
+    risk: pair.mechanism || pair.risk || pair.interactions?.[0]?.mechanism || 'Potential interaction',
+    description: pair.description || pair.evidenceSnippet || pair.interactions?.[0]?.evidenceSnippet || generateDescription(pair),
+    mechanism: pair.mechanism || pair.interactions?.[0]?.mechanism || '',
     recommendations: generateRecommendations(pair, userContext),
-    evidence: pair.interactions || [],
+    evidence: pair.interactions || pair.evidence || [],
   }));
 
   const { riskScore, riskLevel } = calculateRisk(interactions);
@@ -193,30 +205,10 @@ function generateRecommendations(pair, userContext) {
   return recommendations;
 }
 
-function getMockInteractions(drugNames, userContext) {
-  const knownInteractions = {
-    'warfarin+aspirin': { severity: 'major', risk: 'Increased Bleeding Risk', description: 'Concurrent use significantly increases bleeding risk. Monitor INR closely.' },
-    'aspirin+warfarin': { severity: 'major', risk: 'Increased Bleeding Risk', description: 'Concurrent use significantly increases bleeding risk. Monitor INR closely.' },
-    'lisinopril+ibuprofen': { severity: 'major', risk: 'Acute Renal Impairment', description: 'NSAIDs reduce antihypertensive effect and may impair kidney function.' },
-    'ibuprofen+lisinopril': { severity: 'major', risk: 'Acute Renal Impairment', description: 'NSAIDs reduce antihypertensive effect and may impair kidney function.' },
-    'metformin+alcohol': { severity: 'moderate', risk: 'Lactic Acidosis Risk', description: 'Alcohol enhances hypoglycemic effect and increases lactic acidosis risk.' },
-    'alcohol+metformin': { severity: 'moderate', risk: 'Lactic Acidosis Risk', description: 'Alcohol enhances hypoglycemic effect and increases lactic acidosis risk.' },
-    'metoprolol+amlodipine': { severity: 'moderate', risk: 'Enhanced Hypotension', description: 'Both lower blood pressure. May cause excessive hypotension or dizziness.' },
-    'amlodipine+metoprolol': { severity: 'moderate', risk: 'Enhanced Hypotension', description: 'Both lower blood pressure. May cause excessive hypotension or dizziness.' },
-    'simvastatin+amlodipine': { severity: 'major', risk: 'Increased Statin Toxicity', description: 'Amlodipine inhibits statin metabolism, increasing muscle problem risk.' },
-    'amlodipine+simvastatin': { severity: 'major', risk: 'Increased Statin Toxicity', description: 'Amlodipine inhibits statin metabolism, increasing muscle problem risk.' },
-    'sertraline+tramadol': { severity: 'major', risk: 'Serotonin Syndrome', description: 'Combined use increases serotonin syndrome risk. Avoid if possible.' },
-    'tramadol+sertraline': { severity: 'major', risk: 'Serotonin Syndrome', description: 'Combined use increases serotonin syndrome risk. Avoid if possible.' },
-    'alprazolam+alcohol': { severity: 'contraindicated', risk: 'CNS Depression', description: 'Combining can cause severe respiratory depression and death. Do not mix.' },
-    'alcohol+alprazolam': { severity: 'contraindicated', risk: 'CNS Depression', description: 'Combining can cause severe respiratory depression and death. Do not mix.' },
-    'metformin+ciprofloxacin': { severity: 'moderate', risk: 'Blood Sugar Abnormalities', description: 'May cause significant hypoglycemia or hyperglycemia. Monitor blood sugar.' },
-    'ciprofloxacin+metformin': { severity: 'moderate', risk: 'Blood Sugar Abnormalities', description: 'May cause significant hypoglycemia or hyperglycemia. Monitor blood sugar.' },
-    'levothyroxine+omeprazole': { severity: 'minor', risk: 'Reduced Absorption', description: 'PPIs may reduce levothyroxine absorption. Take on empty stomach.' },
-    'omeprazole+levothyroxine': { severity: 'minor', risk: 'Reduced Absorption', description: 'PPIs may reduce levothyroxine absorption. Take on empty stomach.' },
-  };
-
+function getInteractionsFromDatabase(drugNames, userContext) {
   const foundInteractions = [];
-
+  const processedPairs = new Set();
+  
   for (let i = 0; i < drugNames.length; i++) {
     for (let j = i + 1; j < drugNames.length; j++) {
       const drug1 = drugNames[i].toLowerCase();
@@ -224,7 +216,10 @@ function getMockInteractions(drugNames, userContext) {
       const key1 = `${drug1}+${drug2}`;
       const key2 = `${drug2}+${drug1}`;
       
-      const interaction = knownInteractions[key1] || knownInteractions[key2];
+      if (processedPairs.has(key1) || processedPairs.has(key2)) continue;
+      processedPairs.add(key1);
+      
+      const interaction = getInteractionFromDatabase(drug1, drug2);
       
       if (interaction) {
         foundInteractions.push({
@@ -233,9 +228,9 @@ function getMockInteractions(drugNames, userContext) {
           severity: interaction.severity,
           risk: interaction.risk,
           description: interaction.description,
-          mechanism: 'Documented clinical interaction',
-          recommendations: generateRecommendations({ maxSeverity: interaction.severity }, userContext),
-          evidence: ['FDA Drug Interaction Database', 'Clinical Studies'],
+          mechanism: interaction.description,
+          recommendations: generateRecommendationsForSeverity(interaction.severity, userContext),
+          evidence: ['MediSafe Drug Interaction Database', 'Clinical Studies'],
         });
       }
     }
@@ -253,9 +248,113 @@ function getMockInteractions(drugNames, userContext) {
       totalInteractions: foundInteractions.length,
       severityBreakdown: getSeverityBreakdown(foundInteractions),
       message: generateSummaryMessage(foundInteractions, riskLevel),
+      allMedicationsChecked: drugNames,
+      checkedAt: new Date().toISOString(),
     },
     isMockData: true,
   };
+}
+
+const comprehensiveInteractions = {
+  'warfarin+aspirin': { severity: 'major', risk: 'Increased Bleeding Risk', description: 'Concurrent use of Warfarin and Aspirin significantly increases bleeding risk. Monitor INR closely and watch for signs of bleeding.' },
+  'aspirin+warfarin': { severity: 'major', risk: 'Increased Bleeding Risk', description: 'Concurrent use of Warfarin and Aspirin significantly increases bleeding risk. Monitor INR closely and watch for signs of bleeding.' },
+  'lisinopril+ibuprofen': { severity: 'major', risk: 'Acute Renal Impairment', description: 'NSAIDs like Ibuprofen reduce the antihypertensive effect of ACE inhibitors and may impair kidney function.' },
+  'ibuprofen+lisinopril': { severity: 'major', risk: 'Acute Renal Impairment', description: 'NSAIDs like Ibuprofen reduce the antihypertensive effect of ACE inhibitors and may impair kidney function.' },
+  'metformin+alcohol': { severity: 'moderate', risk: 'Lactic Acidosis Risk', description: 'Alcohol enhances the hypoglycemic effect of Metformin and increases the risk of lactic acidosis.' },
+  'alcohol+metformin': { severity: 'moderate', risk: 'Lactic Acidosis Risk', description: 'Alcohol enhances the hypoglycemic effect of Metformin and increases the risk of lactic acidosis.' },
+  'metoprolol+amlodipine': { severity: 'moderate', risk: 'Enhanced Hypotension', description: 'Both Metoprolol and Amlodipine lower blood pressure. Combined use may cause excessive hypotension.' },
+  'amlodipine+metoprolol': { severity: 'moderate', risk: 'Enhanced Hypotension', description: 'Both Metoprolol and Amlodipine lower blood pressure. Combined use may cause excessive hypotension.' },
+  'simvastatin+amlodipine': { severity: 'major', risk: 'Increased Statin Toxicity', description: 'Amlodipine inhibits the metabolism of Simvastatin, increasing the risk of muscle problems.' },
+  'amlodipine+simvastatin': { severity: 'major', risk: 'Increased Statin Toxicity', description: 'Amlodipine inhibits the metabolism of Simvastatin, increasing the risk of muscle problems.' },
+  'sertraline+tramadol': { severity: 'major', risk: 'Serotonin Syndrome', description: 'Combined use of SSRIs and Tramadol increases the risk of serotonin syndrome.' },
+  'tramadol+sertraline': { severity: 'major', risk: 'Serotonin Syndrome', description: 'Combined use of SSRIs and Tramadol increases the risk of serotonin syndrome.' },
+  'alprazolam+alcohol': { severity: 'contraindicated', risk: 'CNS Depression', description: 'Combining Benzodiazepines with alcohol causes severe respiratory depression and can be fatal.' },
+  'alcohol+alprazolam': { severity: 'contraindicated', risk: 'CNS Depression', description: 'Combining Benzodiazepines with alcohol causes severe respiratory depression and can be fatal.' },
+  'metformin+ciprofloxacin': { severity: 'moderate', risk: 'Blood Sugar Abnormalities', description: 'Ciprofloxacin may cause significant hypoglycemia or hyperglycemia when taken with Metformin.' },
+  'ciprofloxacin+metformin': { severity: 'moderate', risk: 'Blood Sugar Abnormalities', description: 'Ciprofloxacin may cause significant hypoglycemia or hyperglycemia when taken with Metformin.' },
+  'levothyroxine+omeprazole': { severity: 'minor', risk: 'Reduced Absorption', description: 'Omeprazole may reduce Levothyroxine absorption. Take on empty stomach.' },
+  'omeprazole+levothyroxine': { severity: 'minor', risk: 'Reduced Absorption', description: 'Omeprazole may reduce Levothyroxine absorption. Take on empty stomach.' },
+  'fluoxetine+tramadol': { severity: 'major', risk: 'Serotonin Syndrome', description: 'SSRIs combined with Tramadol increase serotonin levels, raising serotonin syndrome risk.' },
+  'tramadol+fluoxetine': { severity: 'major', risk: 'Serotonin Syndrome', description: 'SSRIs combined with Tramadol increase serotonin levels, raising serotonin syndrome risk.' },
+  'escitalopram+tramadol': { severity: 'major', risk: 'Serotonin Syndrome', description: 'SSRIs combined with Tramadol increase serotonin levels, raising serotonin syndrome risk.' },
+  'clopidogrel+omeprazole': { severity: 'moderate', risk: 'Reduced Antiplatelet Effect', description: 'Omeprazole may reduce the effectiveness of Clopidogrel.' },
+  'omeprazole+clopidogrel': { severity: 'moderate', risk: 'Reduced Antiplatelet Effect', description: 'Omeprazole may reduce the effectiveness of Clopidogrel.' },
+  'digoxin+amlodipine': { severity: 'moderate', risk: 'Increased Digoxin Levels', description: 'Amlodipine may increase Digoxin levels, potentially leading to toxicity.' },
+  'amlodipine+digoxin': { severity: 'moderate', risk: 'Increased Digoxin Levels', description: 'Amlodipine may increase Digoxin levels, potentially leading to toxicity.' },
+  'spironolactone+lisinopril': { severity: 'moderate', risk: 'Hyperkalemia', description: 'Both medications can increase potassium levels. Monitor potassium levels regularly.' },
+  'lisinopril+spironolactone': { severity: 'moderate', risk: 'Hyperkalemia', description: 'Both medications can increase potassium levels. Monitor potassium levels regularly.' },
+  'warfarin+ibuprofen': { severity: 'major', risk: 'Increased Bleeding Risk', description: 'NSAIDs increase bleeding risk when combined with Warfarin.' },
+  'ibuprofen+warfarin': { severity: 'major', risk: 'Increased Bleeding Risk', description: 'NSAIDs increase bleeding risk when combined with Warfarin.' },
+  'lisinopril+potassium': { severity: 'moderate', risk: 'Hyperkalemia', description: 'ACE inhibitors can increase potassium levels. Supplementary potassium may cause dangerous hyperkalemia.' },
+  'potassium+lisinopril': { severity: 'moderate', risk: 'Hyperkalemia', description: 'ACE inhibitors can increase potassium levels. Supplementary potassium may cause dangerous hyperkalemia.' },
+  'amiodarone+warfarin': { severity: 'major', risk: 'Increased Bleeding Risk', description: 'Amiodarone inhibits Warfarin metabolism, significantly increasing bleeding risk.' },
+  'warfarin+amiodarone': { severity: 'major', risk: 'Increased Bleeding Risk', description: 'Amiodarone inhibits Warfarin metabolism, significantly increasing bleeding risk.' },
+  'fluoxetine+alprazolam': { severity: 'moderate', risk: 'Increased Sedation', description: 'Both medications cause sedation. Combined use may result in excessive drowsiness.' },
+  'alprazolam+fluoxetine': { severity: 'moderate', risk: 'Increased Sedation', description: 'Both medications cause sedation. Combined use may result in excessive drowsiness.' },
+  'metronidazole+alcohol': { severity: 'contraindicated', risk: 'Disulfiram-like Reaction', description: 'Combining Metronidazole with alcohol causes a disulfiram-like reaction.' },
+  'alcohol+metronidazole': { severity: 'contraindicated', risk: 'Disulfiram-like Reaction', description: 'Combining Metronidazole with alcohol causes a disulfiram-like reaction.' },
+  'ciprofloxacin+warfarin': { severity: 'major', risk: 'Increased Bleeding Risk', description: 'Ciprofloxacin may increase the anticoagulant effect of Warfarin.' },
+  'warfarin+ciprofloxacin': { severity: 'major', risk: 'Increased Bleeding Risk', description: 'Ciprofloxacin may increase the anticoagulant effect of Warfarin.' },
+  'simvastatin+gemfibrozil': { severity: 'contraindicated', risk: 'Severe Myopathy Risk', description: 'Gemfibrozil significantly increases Simvastatin levels, causing high risk of myopathy.' },
+  'gemfibrozil+simvastatin': { severity: 'contraindicated', risk: 'Severe Myopathy Risk', description: 'Gemfibrozil significantly increases Simvastatin levels, causing high risk of myopathy.' },
+  'methotrexate+ibuprofen': { severity: 'major', risk: 'Methotrexate Toxicity', description: 'NSAIDs reduce Methotrexate excretion, potentially causing toxic levels.' },
+  'ibuprofen+methotrexate': { severity: 'major', risk: 'Methotrexate Toxicity', description: 'NSAIDs reduce Methotrexate excretion, potentially causing toxic levels.' },
+  'digoxin+furosemide': { severity: 'moderate', risk: 'Hypokalemia', description: 'Furosemide-induced hypokalemia increases the risk of Digoxin toxicity.' },
+  'furosemide+digoxin': { severity: 'moderate', risk: 'Hypokalemia', description: 'Furosemide-induced hypokalemia increases the risk of Digoxin toxicity.' },
+  'losartan+potassium': { severity: 'moderate', risk: 'Hyperkalemia', description: 'ARBs can increase potassium levels. Supplementary potassium may cause dangerous hyperkalemia.' },
+  'potassium+losartan': { severity: 'moderate', risk: 'Hyperkalemia', description: 'ARBs can increase potassium levels. Supplementary potassium may cause dangerous hyperkalemia.' },
+  'ramipril+potassium': { severity: 'moderate', risk: 'Hyperkalemia', description: 'ACE inhibitors can increase potassium levels.' },
+  'enalapril+potassium': { severity: 'moderate', risk: 'Hyperkalemia', description: 'ACE inhibitors can increase potassium levels.' },
+  'diltiazem+simvastatin': { severity: 'major', risk: 'Increased Statin Toxicity', description: 'Diltiazem inhibits the metabolism of Simvastatin, increasing risk of myopathy.' },
+  'simvastatin+diltiazem': { severity: 'major', risk: 'Increased Statin Toxicity', description: 'Diltiazem inhibits the metabolism of Simvastatin, increasing risk of myopathy.' },
+  'amiodarone+simvastatin': { severity: 'major', risk: 'Increased Statin Toxicity', description: 'Amiodarone inhibits the metabolism of Simvastatin, increasing myopathy risk.' },
+  'simvastatin+amiodarone': { severity: 'major', risk: 'Increased Statin Toxicity', description: 'Amiodarone inhibits the metabolism of Simvastatin, increasing myopathy risk.' },
+};
+
+function getInteractionFromDatabase(drug1, drug2) {
+  const key1 = `${drug1}+${drug2}`;
+  const key2 = `${drug2}+${drug1}`;
+  return comprehensiveInteractions[key1] || comprehensiveInteractions[key2] || null;
+}
+
+function generateRecommendationsForSeverity(severity, userContext) {
+  const gender = userContext?.gender;
+  const pregnant = userContext?.pregnant;
+  const lactating = userContext?.lactating;
+  
+  const baseRecommendations = {
+    contraindicated: [
+      'DO NOT take these medications together',
+      'Seek immediate medical attention',
+      'Contact your prescribing physician',
+    ],
+    major: [
+      'Consult your prescribing physician immediately',
+      'Do not start or stop medications without medical advice',
+      'Consider alternative treatment options',
+    ],
+    moderate: [
+      'Discuss with your healthcare provider',
+      'Monitor for adverse effects',
+      'Consider timing separation if appropriate',
+    ],
+    minor: [
+      'Generally safe but be aware of potential effects',
+      'Monitor for any unusual symptoms',
+    ],
+  };
+  
+  let recommendations = [...(baseRecommendations[severity] || baseRecommendations.moderate)];
+  
+  if (pregnant) {
+    recommendations.unshift('⚠️ Important: Pregnancy detected. Consult your OB/GYN before making any changes.');
+  }
+  
+  if (lactating) {
+    recommendations.unshift('⚠️ Important: Breastfeeding detected. Consult your doctor about medication safety.');
+  }
+  
+  return recommendations;
 }
 
 export function getRiskColor(riskLevel) {

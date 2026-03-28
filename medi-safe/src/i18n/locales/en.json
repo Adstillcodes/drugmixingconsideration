@@ -1,0 +1,286 @@
+{
+  "app": {
+    "name": "MediSafe",
+    "tagline": "Your safety is why we ask this."
+  },
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "contact": "Contact",
+    "language": "Language",
+    "selectLanguage": "Select Language"
+  },
+  "intake": {
+    "hero": {
+      "title": "Let's keep your medications in harmony",
+      "subtitle": "Our Friendly Audit tool helps you understand how your treatments interact, keeping your well-being at the heart of everything."
+    },
+    "prescriptionType": {
+      "label": "Step 1: Prescription Type",
+      "self": "Self-prescribed",
+      "active": "Active prescription"
+    },
+    "demographics": {
+      "label": "Step 2: Tell us a bit about yourself",
+      "gender": "Biological Gender",
+      "genderPlaceholder": "Select gender",
+      "female": "Female",
+      "male": "Male",
+      "other": "Prefer not to say",
+      "age": "Age",
+      "agePlaceholder": "Years",
+      "pregnant": {
+        "title": "Are you currently pregnant?",
+        "subtitle": "Safety for you and your baby is our top priority."
+      },
+      "lactating": {
+        "title": "Are you currently breastfeeding?",
+        "subtitle": "Some medications can pass through breast milk."
+      }
+    },
+    "medications": {
+      "label": "Step 3: Medications",
+      "searchPlaceholder": "Search drug name (e.g. Lisinopril, Ibuprofen)",
+      "addMedication": "Add medication",
+      "removeMedication": "Remove"
+    },
+    "conditions": {
+      "label": "Step 4: Pre-existing Conditions",
+      "searchPlaceholder": "Search health conditions (e.g. Diabetes, Heart Disease)"
+    },
+    "upload": {
+      "label": "Step 5: Upload Prescription",
+      "labelRequired": "Step 5: Upload Prescription (Required for Active Prescription)",
+      "labelOptional": "Step 5: Upload Prescription (Optional)",
+      "title": "Snap or Drag File",
+      "subtitle": "Upload a photo of your prescription for an even faster analysis.",
+      "chooseFile": "Choose File",
+      "processing": "Processing Prescription...",
+      "status": {
+        "initializing": "Initializing AI model...",
+        "loading": "Loading AI model...",
+        "processing": "Processing prescription...",
+        "extracting": "Extracting medications with AI...",
+        "success": "Found {{count}} medication(s) from prescription",
+        "noMedications": "No medications detected in prescription",
+        "failed": "Failed to process prescription"
+      },
+      "extractedMedications": "Extracted Medications",
+      "aiExtracted": "AI-Extracted Medications",
+      "aiExtractedSubtitle": "These medications were automatically extracted from your prescription and added to your analysis."
+    },
+    "submit": {
+      "runAnalysis": "Run Friendly Analysis",
+      "uploadToContinue": "Upload Prescription to Continue",
+      "privacyNote": "Your medical data is encrypted and HIPAA compliant."
+    },
+    "validation": {
+      "minMedications": "Please add at least 2 medications to analyze interactions.",
+      "demographicsRequired": "Please fill in your gender and age.",
+      "prescriptionRequired": "Please upload your prescription file when selecting 'Active Prescription'."
+    }
+  },
+  "processing": {
+    "title": "Analyzing medication combinations...",
+    "subtitle": "Please wait while we analyze your medications",
+    "downloadingAI": "Downloading AI Model...",
+    "downloadingAISubtitle": "First-time setup for intelligent analysis",
+    "analyzing": "Analyzing {{count}} medications",
+    "complete": "Analysis complete!",
+    "privacyNote": "Your data is being processed locally and securely",
+    "noMedications": {
+      "title": "No medications provided",
+      "button": "Go back to Intake Form"
+    }
+  },
+  "results": {
+    "header": {
+      "title": "Here's what we found for your safety",
+      "analysisComplete": "Analysis completed",
+      "noAnalysis": "No analysis available. Please complete the intake form.",
+      "analysisCompleteBadge": "Analysis Complete"
+    },
+    "riskSummary": {
+      "title": "Interaction Risk Index",
+      "percentage": "{{value}}%",
+      "riskLevel": {
+        "safe": "Safe",
+        "low": "Low Risk",
+        "moderate": "Moderate",
+        "high": "High Risk",
+        "critical": "Critical"
+      },
+      "safeMessage": "Your medications appear safe",
+      "attentionMessage": "Attention Required",
+      "safeSubtext": "No significant drug interactions detected between your medications.",
+      "attentionSubtext": "Some medication combinations may require medical attention."
+    },
+    "medications": {
+      "title": "Analyzed Medications",
+      "count": "{{count}} ITEMS",
+      "fromPrescription": "From Prescription",
+      "aiExtracted": "{{count}} medication(s) extracted from prescription using AI",
+      "healthContext": "Health Context"
+    },
+    "interactions": {
+      "title": "Detected Interactions",
+      "found": "{{count}} Found",
+      "viewDetails": "View Details",
+      "noInteractions": {
+        "title": "No Interactions Found",
+        "message": "Your current medication combination appears to be safe based on our analysis. Continue taking your medications as prescribed."
+      }
+    },
+    "severity": {
+      "contraindicated": "Contraindicated",
+      "major": "Major",
+      "moderate": "Moderate",
+      "minor": "Minor",
+      "unknown": "Unknown"
+    },
+    "aiAnalysis": {
+      "title": "AI Analysis Summary",
+      "keyConcerns": "Key Concerns"
+    },
+    "actions": {
+      "viewRecommendations": "View Recommendations",
+      "startNew": "Start New Analysis",
+      "print": "Print Report",
+      "download": "Download Report"
+    }
+  },
+  "deepDive": {
+    "header": {
+      "safetyBanner": "Your safety matters",
+      "backToSummary": "Back to Summary",
+      "title": "Detailed Interaction Analysis",
+      "subtitle": "In-depth clinical analysis of the interaction between {{drug1}} and {{drug2}}.",
+      "privacy": "Anonymous Mode"
+    },
+    "severity": {
+      "critical": "Do Not Combine",
+      "high": "High Risk",
+      "moderate": "Monitor Closely",
+      "low": "Generally Safe",
+      "unknown": "Limited Data"
+    },
+    "clinical": {
+      "title": "Clinical Analysis"
+    },
+    "mechanism": {
+      "title": "Mechanism of Interaction"
+    },
+    "personalized": {
+      "title": "Personalized Context"
+    },
+    "recommendations": {
+      "title": "Safety Recommendations"
+    },
+    "riskAssessment": {
+      "title": "Risk Assessment",
+      "severityLevel": "Severity Level",
+      "riskCategory": "Risk Category",
+      "evidence": "Evidence",
+      "evidenceValue": "FDA Label Data"
+    },
+    "aiAnalysis": {
+      "title": "AI Analysis"
+    },
+    "consultation": {
+      "title": "Need Professional Help?",
+      "subtitle": "Connect with a clinical pharmacist to discuss how this interaction applies to your specific health history.",
+      "button": "Consult a Pharmacist"
+    },
+    "privacy": {
+      "title": "Privacy",
+      "message": "Your interaction data is processed locally. Your data is never stored on our servers."
+    },
+    "continue": {
+      "button": "View Complete Recommendations"
+    }
+  },
+  "recommendations": {
+    "header": {
+      "title": "Your Path to Safety",
+      "subtitle": "Based on our analysis of your medication combination, here are the recommended next steps to ensure your safety and well-being."
+    },
+    "actionPlan": {
+      "title": "What You Should Do Next"
+    },
+    "priority": {
+      "urgent": "Priority: Urgent",
+      "moderate": "Priority: Moderate"
+    },
+    "steps": {
+      "contraindicated": {
+        "1": { "title": "STOP Taking These Together", "desc": "These medications should never be combined. Stop taking both and seek immediate medical attention." },
+        "2": { "title": "Contact Your Doctor", "desc": "Call your prescribing physician or healthcare provider immediately to discuss alternative options." },
+        "3": { "title": "Seek Emergency Care", "desc": "If you are currently taking both medications, consider visiting an urgent care or emergency department." }
+      },
+      "major": {
+        "1": { "title": "Consult Your Physician", "desc": "Schedule an appointment with your doctor immediately to discuss this interaction and possible alternatives." },
+        "2": { "title": "Do Not Stop Abruptly", "desc": "Do not stop taking any medications without medical supervision. Some medications require gradual discontinuation." },
+        "3": { "title": "Consider Alternatives", "desc": "Ask your doctor about safer alternatives that achieve the same therapeutic goals without the interaction risk." }
+      },
+      "moderate": {
+        "1": { "title": "Monitor for Symptoms", "desc": "Pay close attention to any unusual symptoms or side effects while taking these medications together." },
+        "2": { "title": "Consider Timing Separation", "desc": "Ask your pharmacist if taking these medications at different times of day could reduce the interaction risk." },
+        "3": { "title": "Schedule a Review", "desc": "Schedule a medication review with your doctor or pharmacist within the next week to discuss this combination." }
+      },
+      "minor": {
+        "1": { "title": "Be Aware", "desc": "While generally safe, be aware of any mild side effects that may occur from this combination." },
+        "2": { "title": "Regular Monitoring", "desc": "Continue with your regular check-ups. Inform your doctor about all medications you are taking." }
+      }
+    },
+    "aiAdvice": {
+      "title": "AI Recommendations"
+    },
+    "actions": {
+      "share": "Share with Your Doctor",
+      "print": "Print Report",
+      "download": "Download Report"
+    },
+    "trust": {
+      "hipaa": "HIPAA Compliant",
+      "hipaaSub": "Your data is secure",
+      "fda": "FDA Verified",
+      "fdaSub": "Based on drug labels"
+    },
+    "disclaimer": {
+      "title": "Important Disclaimer",
+      "text": "This analysis is for informational purposes only and does not replace professional medical advice. Always consult with a qualified healthcare provider before making any changes to your medication regimen. If you are experiencing any adverse effects, seek medical attention immediately."
+    },
+    "navigation": {
+      "back": "Back to Results",
+      "newAnalysis": "Start New Analysis"
+    },
+    "noData": {
+      "title": "No Data Provided",
+      "message": "No medications were provided for analysis. Please go back to the intake form and add at least 2 medications.",
+      "button": "Go back to Intake Form"
+    }
+  },
+  "common": {
+    "yes": "Yes",
+    "no": "No",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "close": "Close",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "continue": "Continue",
+    "warning": "Warning",
+    "urgent": "Urgent"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "noInternet": "Please check your internet connection.",
+    "serverError": "Server error. Please try again later."
+  }
+}

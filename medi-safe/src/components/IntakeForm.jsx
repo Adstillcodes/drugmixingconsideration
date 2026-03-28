@@ -1,5 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
+import { processUploadedFile } from '../services/ocr';
+import { extractMedicationsFromText, initializeWebLLM } from '../services/prescriptionExtractor';
+import { searchDrugs } from '../services/drugApi';
 
 const commonConditions = [
   'Diabetes Type 1', 'Diabetes Type 2', 'Hypertension', 'Heart Disease',
@@ -7,32 +11,19 @@ const commonConditions = [
   'Depression', 'Anxiety', 'Arthritis'
 ];
 
-const commonDrugs = [
-  { name: 'Metformin', category: 'Antidiabetic', dosage: '500mg' },
-  { name: 'Lisinopril', category: 'ACE Inhibitor', dosage: '10mg' },
-  { name: 'Atorvastatin', category: 'Statin', dosage: '20mg' },
-  { name: 'Amlodipine', category: 'Calcium Channel Blocker', dosage: '5mg' },
-  { name: 'Omeprazole', category: 'PPI', dosage: '20mg' },
-  { name: 'Metoprolol', category: 'Beta Blocker', dosage: '50mg' },
-  { name: 'Losartan', category: 'ARB', dosage: '50mg' },
-  { name: 'Gabapentin', category: 'Anticonvulsant', dosage: '300mg' },
-  { name: 'Warfarin', category: 'Anticoagulant', dosage: '5mg' },
-  { name: 'Aspirin', category: 'NSAID', dosage: '81mg' },
-  { name: 'Ibuprofen', category: 'NSAID', dosage: '400mg' },
-  { name: 'Amoxicillin', category: 'Antibiotic', dosage: '500mg' },
-  { name: 'Azithromycin', category: 'Antibiotic', dosage: '250mg' },
-  { name: 'Prednisone', category: 'Corticosteroid', dosage: '10mg' },
-  { name: 'Levothyroxine', category: 'Thyroid', dosage: '50mcg' },
+const commonDosages = [
+  '10mg', '20mg', '25mg', '50mg', '100mg', '200mg', '500mg',
+  '1mg', '5mg', '0.5mg', '0.25mg',
+  '10mcg', '50mcg', '100mcg',
+  '5ml', '10ml',
+  '1 tablet', '2 tablets', 'As directed'
 ];
 
 export default function IntakeForm() {
+  const { t } = useTranslation();
   const {
     userData,
     updateUserData,
-    addMedication,
-    removeMedication,
-    addCondition,
-    removeCondition,
     startAnalysis,
     setCurrentScreen,
   } = useApp();
@@ -41,16 +32,17 @@ export default function IntakeForm() {
   const [conditionSearch, setConditionSearch] = useState('');
   const [showDrugDropdown, setShowDrugDropdown] = useState(false);
   const [showConditionDropdown, setShowConditionDropdown] = useState(false);
+  const [drugSearchResults, setDrugSearchResults] = useState([]);
+  const [isSearchingDrugs, setIsSearchingDrugs] = useState(false);
   const [editableMedications, setEditableMedications] = useState(userData.medications);
   const [editableConditions, setEditableConditions] = useState(userData.conditions);
+  const [editingDosage, setEditingDosage] = useState(null);
   const [uploadedFile, setUploadedFile] = useState(null);
+  const [extractedMedications, setExtractedMedications] = useState([]);
+  const [isProcessingPrescription, setIsProcessingPrescription] = useState(false);
+  const [prescriptionProcessingStatus, setPrescriptionProcessingStatus] = useState('');
   const fileInputRef = useRef(null);
-
-  const filteredDrugs = commonDrugs.filter(
-    (drug) =>
-      drug.name.toLowerCase().includes(drugSearch.toLowerCase()) &&
-      !editableMedications.some((m) => m.name === drug.name)
-  );
+  const searchTimeoutRef = useRef(null);
 
   const filteredConditions = commonConditions.filter(
     (condition) =>
@@ -58,109 +50,242 @@ export default function IntakeForm() {
       !editableConditions.includes(condition)
   );
 
-  const handleAddDrug = (drug) => {
-    const newMed = { ...drug, id: Date.now() };
-    setEditableMedications([...editableMedications, newMed]);
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (drugSearch.length < 2) {
+      setDrugSearchResults([]);
+      return;
+    }
+
+    setIsSearchingDrugs(true);
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const results = await searchDrugs(drugSearch, 15);
+        const filteredResults = results.filter(
+          (drug) => !editableMedications.some((m) => m.name.toLowerCase() === drug.name.toLowerCase())
+        );
+        setDrugSearchResults(filteredResults);
+      } catch (error) {
+        console.error('Drug search error:', error);
+        setDrugSearchResults([]);
+      } finally {
+        setIsSearchingDrugs(false);
+      }
+    }, 300);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [drugSearch, editableMedications]);
+
+  const handleAddDrug = useCallback((drug) => {
+    const requiresDosage = userData.prescriptionType === 'self';
+    const newMed = {
+      ...drug,
+      id: Date.now(),
+      dosage: drug.dosage || (requiresDosage ? '' : 'As prescribed'),
+      requiresDosage: requiresDosage,
+    };
+    setEditableMedications((prev) => [...prev, newMed]);
     setDrugSearch('');
     setShowDrugDropdown(false);
-  };
+    setDrugSearchResults([]);
+  }, [userData.prescriptionType]);
 
-  const handleRemoveDrug = (drugName) => {
-    setEditableMedications(editableMedications.filter((m) => m.name !== drugName));
-  };
+  const handleAddExtractedDrug = useCallback((drug) => {
+    const newMed = {
+      name: drug.name,
+      dosage: drug.dosage && drug.dosage !== 'Not specified' ? drug.dosage : 'As prescribed',
+      category: drug.category,
+      id: `extracted-${Date.now()}-${Math.random()}`,
+      source: 'prescription',
+      fromOCR: true,
+      requiresDosage: false,
+    };
+    setEditableMedications((prev) => {
+      if (prev.some((m) => m.name.toLowerCase() === newMed.name.toLowerCase())) {
+        return prev;
+      }
+      return [...prev, newMed];
+    });
+  }, []);
 
-  const handleAddCondition = (condition) => {
-    setEditableConditions([...editableConditions, condition]);
+  const handleRemoveDrug = useCallback((drugName) => {
+    setEditableMedications((prev) => prev.filter((m) => m.name !== drugName));
+    setExtractedMedications((prev) => prev.filter((m) => m.name !== drugName));
+  }, []);
+
+  const handleDosageChange = useCallback((drugName, newDosage) => {
+    setEditableMedications((prev) =>
+      prev.map((m) => (m.name === drugName ? { ...m, dosage: newDosage } : m))
+    );
+    setEditingDosage(null);
+  }, []);
+
+  const handleAddCondition = useCallback((condition) => {
+    setEditableConditions((prev) => {
+      if (prev.includes(condition)) return prev;
+      return [...prev, condition];
+    });
     setConditionSearch('');
     setShowConditionDropdown(false);
-  };
+  }, []);
 
-  const handleRemoveCondition = (condition) => {
-    setEditableConditions(editableConditions.filter((c) => c !== condition));
-  };
+  const handleRemoveCondition = useCallback((condition) => {
+    setEditableConditions((prev) => prev.filter((c) => c !== condition));
+  }, []);
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setUploadedFile(file);
+    if (!file) return;
+
+    setUploadedFile(file);
+    setIsProcessingPrescription(true);
+    setPrescriptionProcessingStatus(t('intake.upload.status.initializing'));
+
+    try {
+      await initializeWebLLM((progress) => {
+        setPrescriptionProcessingStatus(`${t('intake.upload.status.loading')} ${progress}%`);
+      });
+
+      setPrescriptionProcessingStatus(t('intake.upload.status.processing'));
+      const ocrResult = await processUploadedFile(file);
+
+      let extractedMeds = [];
+
+      if (ocrResult.success && ocrResult.rawText) {
+        setPrescriptionProcessingStatus(t('intake.upload.status.extracting'));
+        const aiResult = await extractMedicationsFromText(ocrResult.rawText);
+
+        if (aiResult.success && aiResult.drugs.length > 0) {
+          extractedMeds = aiResult.drugs;
+        } else if (ocrResult.drugs && ocrResult.drugs.length > 0) {
+          extractedMeds = ocrResult.drugs;
+        }
+      } else if (ocrResult.drugs && ocrResult.drugs.length > 0) {
+        extractedMeds = ocrResult.drugs;
+      }
+
+      if (extractedMeds.length > 0) {
+        setExtractedMedications(extractedMeds);
+        extractedMeds.forEach((med) => handleAddExtractedDrug(med));
+        setPrescriptionProcessingStatus(
+          t('intake.upload.status.success', { count: extractedMeds.length })
+        );
+      } else {
+        setPrescriptionProcessingStatus(t('intake.upload.status.noMedications'));
+      }
+    } catch (error) {
+      console.error('Error processing prescription:', error);
+      setPrescriptionProcessingStatus(t('intake.upload.status.failed'));
+    } finally {
+      setIsProcessingPrescription(false);
     }
   };
+
+  const handleRemoveExtractedMed = useCallback((medName) => {
+    setExtractedMedications((prev) => prev.filter((m) => m.name !== medName));
+    setEditableMedications((prev) => prev.filter((m) => m.name !== medName));
+  }, []);
 
   const handleSubmit = () => {
+    const requiresDosage = userData.prescriptionType === 'self';
+
+    const medsWithoutDosage = editableMedications.filter(
+      (m) => requiresDosage && (!m.dosage || m.dosage.trim() === '')
+    );
+
+    if (requiresDosage && medsWithoutDosage.length > 0) {
+      alert(`Please enter dosage for: ${medsWithoutDosage.map((m) => m.name).join(', ')}`);
+      return;
+    }
+
     if (editableMedications.length < 2) {
-      alert('Please add at least 2 medications to analyze interactions.');
+      alert(t('intake.validation.minMedications'));
       return;
     }
-    
+
     if (!userData.gender || !userData.age) {
-      alert('Please fill in your gender and age.');
+      alert(t('intake.validation.demographicsRequired'));
       return;
     }
-    
+
+    if (userData.prescriptionType === 'prescription' && !uploadedFile) {
+      alert(t('intake.validation.prescriptionRequired'));
+      return;
+    }
+
     updateUserData({
       medications: editableMedications,
       conditions: editableConditions,
       prescriptionFile: uploadedFile,
+      extractedMedications: extractedMedications,
     });
-    
+
     setCurrentScreen('processing');
     startAnalysis(editableMedications, editableConditions);
   };
 
-  const isFormValid = userData.gender && userData.age && editableMedications.length >= 2;
+  const isFormValid =
+    userData.gender &&
+    userData.age &&
+    editableMedications.length >= 2 &&
+    editableMedications.every(
+      (m) => !m.requiresDosage || (m.dosage && m.dosage.trim() !== '')
+    ) &&
+    (userData.prescriptionType !== 'prescription' || uploadedFile);
 
   return (
     <div className="max-w-4xl mx-auto mb-6">
-      {/* Warm Banner */}
       <div className="max-w-4xl mx-auto mb-6">
         <div className="bg-secondary-container/40 border border-secondary-container text-on-secondary-container px-6 py-3 rounded-2xl flex items-center gap-3">
           <span className="material-symbols-outlined text-primary" data-icon="volunteer_activism">volunteer_activism</span>
-          <span className="font-medium">Your safety is why we ask this.</span>
+          <span className="font-medium">{t('app.tagline')}</span>
         </div>
       </div>
 
-      {/* Hero Section */}
       <section className="max-w-4xl mx-auto mb-12">
         <div className="relative overflow-hidden rounded-[2.5rem] h-[320px] flex items-center px-12 bg-primary">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/80 to-primary/60" />
           <div className="relative z-10 max-w-lg">
             <h1 className="text-white text-5xl font-bold tracking-tight mb-4 leading-[1.1]">
-              Let's keep your medications in harmony
+              {t('intake.hero.title')}
             </h1>
             <p className="text-white/90 text-lg leading-relaxed font-light">
-              Our Friendly Audit tool helps you understand how your treatments interact, keeping your well-being at the heart of everything.
+              {t('intake.hero.subtitle')}
             </p>
           </div>
         </div>
       </section>
 
-      {/* Main Form Card */}
       <div className="max-w-3xl mx-auto space-y-8">
-        {/* Step Indicators */}
         <div className="flex justify-between items-center px-4">
           <div className="flex items-center gap-2">
             <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">1</span>
-            <span className="text-sm font-semibold text-primary">Intake</span>
+            <span className="text-sm font-semibold text-primary">{t('intake.prescriptionType.label')}</span>
           </div>
           <div className="h-px flex-1 mx-4 bg-outline-variant" />
           <div className="flex items-center gap-2 opacity-40">
             <span className="w-8 h-8 rounded-full bg-surface-container-high text-on-surface flex items-center justify-center font-bold text-sm">2</span>
-            <span className="text-sm font-medium">Analysis</span>
+            <span className="text-sm font-medium">{t('intake.demographics.label')}</span>
           </div>
           <div className="h-px flex-1 mx-4 bg-outline-variant" />
           <div className="flex items-center gap-2 opacity-40">
             <span className="w-8 h-8 rounded-full bg-surface-container-high text-on-surface flex items-center justify-center font-bold text-sm">3</span>
-            <span className="text-sm font-medium">Result</span>
+            <span className="text-sm font-medium">{t('intake.medications.label')}</span>
           </div>
         </div>
 
-        {/* Main Form */}
         <div className="bg-surface-container-lowest rounded-[24px] p-10 shadow-xl border border-surface-container-high">
           <form className="space-y-12" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
-            {/* Step 1: Prescription Type */}
             <div className="space-y-4">
               <label className="block text-xs font-bold text-on-surface/50 uppercase tracking-widest">
-                Step 1: Prescription Type
+                {t('intake.prescriptionType.label')}
               </label>
               <div className="grid grid-cols-2 gap-4 p-1.5 bg-surface-container-low rounded-2xl border border-surface-container-high">
                 <button
@@ -172,7 +297,7 @@ export default function IntakeForm() {
                   }`}
                   onClick={() => updateUserData({ prescriptionType: 'self' })}
                 >
-                  Self-prescribed
+                  {t('intake.prescriptionType.self')}
                 </button>
                 <button
                   type="button"
@@ -183,16 +308,15 @@ export default function IntakeForm() {
                   }`}
                   onClick={() => updateUserData({ prescriptionType: 'prescription' })}
                 >
-                  Active prescription
+                  {t('intake.prescriptionType.active')}
                 </button>
               </div>
             </div>
 
-            {/* Step 2: Demographics */}
             <div className="space-y-6">
               <div className="flex items-center gap-2">
                 <label className="block text-xs font-bold text-on-surface/50 uppercase tracking-widest">
-                  Step 2: Tell us a bit about yourself
+                  {t('intake.demographics.label')}
                 </label>
                 <span className="material-symbols-outlined text-primary text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                   shield
@@ -200,23 +324,23 @@ export default function IntakeForm() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-2">
-                  <span className="text-on-surface font-semibold block text-sm">Biological Gender</span>
+                  <span className="text-on-surface font-semibold block text-sm">{t('intake.demographics.gender')}</span>
                   <select
                     className="w-full bg-surface-container-low border border-surface-container-high rounded-xl py-4 px-5 text-lg focus:ring-2 focus:ring-primary/20 transition-all outline-none appearance-none cursor-pointer"
                     value={userData.gender}
                     onChange={(e) => updateUserData({ gender: e.target.value })}
                   >
-                    <option value="">Select gender</option>
-                    <option value="female">Female</option>
-                    <option value="male">Male</option>
-                    <option value="other">Prefer not to say</option>
+                    <option value="">{t('intake.demographics.genderPlaceholder')}</option>
+                    <option value="female">{t('intake.demographics.female')}</option>
+                    <option value="male">{t('intake.demographics.male')}</option>
+                    <option value="other">{t('intake.demographics.other')}</option>
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <span className="text-on-surface font-semibold block text-sm">Age</span>
+                  <span className="text-on-surface font-semibold block text-sm">{t('intake.demographics.age')}</span>
                   <input
                     className="w-full bg-surface-container-low border border-surface-container-high rounded-xl py-4 px-5 text-lg focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-                    placeholder="Years"
+                    placeholder={t('intake.demographics.agePlaceholder')}
                     type="number"
                     min="1"
                     max="120"
@@ -225,14 +349,13 @@ export default function IntakeForm() {
                   />
                 </div>
 
-                {/* Pregnancy/Lactation Check - Show only for females */}
                 {userData.gender === 'female' && (
                   <div className="md:col-span-2 p-6 bg-secondary-container/30 rounded-2xl border border-secondary-container/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                       <span className="material-symbols-outlined text-on-secondary-container text-3xl" data-icon="pregnant_woman">pregnant_woman</span>
                       <div>
-                        <p className="font-bold text-on-secondary-container">Are you currently pregnant?</p>
-                        <p className="text-sm text-on-secondary-container/70">Safety for you and your baby is our top priority.</p>
+                        <p className="font-bold text-on-secondary-container">{t('intake.demographics.pregnant.title')}</p>
+                        <p className="text-sm text-on-secondary-container/70">{t('intake.demographics.pregnant.subtitle')}</p>
                       </div>
                     </div>
                     <div className="flex gap-3">
@@ -245,7 +368,7 @@ export default function IntakeForm() {
                         }`}
                         onClick={() => updateUserData({ pregnant: true })}
                       >
-                        Yes
+                        {t('common.yes')}
                       </button>
                       <button
                         type="button"
@@ -256,20 +379,19 @@ export default function IntakeForm() {
                         }`}
                         onClick={() => updateUserData({ pregnant: false })}
                       >
-                        No
+                        {t('common.no')}
                       </button>
                     </div>
                   </div>
                 )}
 
-                {/* Lactation Check */}
                 {userData.gender === 'female' && (
                   <div className="md:col-span-2 p-6 bg-secondary-container/30 rounded-2xl border border-secondary-container/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                       <span className="material-symbols-outlined text-on-secondary-container text-3xl" data-icon="child_friendly">child_friendly</span>
                       <div>
-                        <p className="font-bold text-on-secondary-container">Are you currently breastfeeding?</p>
-                        <p className="text-sm text-on-secondary-container/70">Some medications can pass through breast milk.</p>
+                        <p className="font-bold text-on-secondary-container">{t('intake.demographics.lactating.title')}</p>
+                        <p className="text-sm text-on-secondary-container/70">{t('intake.demographics.lactating.subtitle')}</p>
                       </div>
                     </div>
                     <div className="flex gap-3">
@@ -282,7 +404,7 @@ export default function IntakeForm() {
                         }`}
                         onClick={() => updateUserData({ lactating: true })}
                       >
-                        Yes
+                        {t('common.yes')}
                       </button>
                       <button
                         type="button"
@@ -293,7 +415,7 @@ export default function IntakeForm() {
                         }`}
                         onClick={() => updateUserData({ lactating: false })}
                       >
-                        No
+                        {t('common.no')}
                       </button>
                     </div>
                   </div>
@@ -301,23 +423,21 @@ export default function IntakeForm() {
               </div>
             </div>
 
-            {/* Step 3: Medications */}
             <div className="space-y-6">
               <div className="flex items-center gap-2">
                 <label className="block text-xs font-bold text-on-surface/50 uppercase tracking-widest">
-                  Step 3: Medications
+                  {t('intake.medications.label')}
                 </label>
                 <span className="material-symbols-outlined text-primary text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                   shield
                 </span>
               </div>
-              
-              {/* Drug Search */}
+
               <div className="relative">
                 <span className="absolute left-5 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface/40" data-icon="search">search</span>
                 <input
                   className="w-full bg-surface-container-low border border-surface-container-high rounded-2xl py-5 pl-14 pr-5 text-lg focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-                  placeholder="Search drug name (e.g. Lisinopril, Ibuprofen)"
+                  placeholder={t('intake.medications.searchPlaceholder')}
                   type="text"
                   value={drugSearch}
                   onChange={(e) => {
@@ -327,38 +447,72 @@ export default function IntakeForm() {
                   onFocus={() => setShowDrugDropdown(true)}
                   onBlur={() => setTimeout(() => setShowDrugDropdown(false), 200)}
                 />
-                
-                {/* Drug Dropdown */}
-                {showDrugDropdown && filteredDrugs.length > 0 && (
+
+                {showDrugDropdown && (drugSearchResults.length > 0 || isSearchingDrugs) && (
                   <div className="absolute z-10 w-full mt-2 bg-white rounded-xl shadow-lg border border-surface-container-high max-h-60 overflow-y-auto">
-                    {filteredDrugs.map((drug) => (
-                      <div
-                        key={drug.name}
-                        className="px-5 py-3 hover:bg-surface-container-low cursor-pointer flex justify-between items-center"
-                        onClick={() => handleAddDrug(drug)}
-                      >
-                        <div>
-                          <span className="font-semibold text-on-surface">{drug.name}</span>
-                          <span className="text-sm text-on-surface/60 ml-2">{drug.category}</span>
+                    {isSearchingDrugs ? (
+                      <div className="px-5 py-3 text-on-surface-variant">Searching...</div>
+                    ) : (
+                      drugSearchResults.map((drug) => (
+                        <div
+                          key={drug.name}
+                          className="px-5 py-3 hover:bg-surface-container-low cursor-pointer flex justify-between items-center"
+                          onClick={() => handleAddDrug(drug)}
+                        >
+                          <div>
+                            <span className="font-semibold text-on-surface">{drug.name}</span>
+                            <span className="text-sm text-on-surface/60 ml-2">{drug.category}</span>
+                          </div>
+                          <span className="text-sm text-primary font-medium">{drug.class}</span>
                         </div>
-                        <span className="text-sm text-primary font-medium">{drug.dosage}</span>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 )}
               </div>
 
-              {/* Medication Tags */}
               <div className="flex flex-wrap gap-3">
                 {editableMedications.map((med) => (
                   <div
                     key={med.id || med.name}
-                    className="bg-secondary-container text-on-secondary-container px-4 py-2.5 rounded-full flex items-center gap-2 font-semibold text-sm border border-secondary-container/50"
+                    className={`bg-secondary-container text-on-secondary-container px-4 py-2.5 rounded-full flex items-center gap-2 font-semibold text-sm border border-secondary-container/50 ${
+                      med.requiresDosage && (!med.dosage || med.dosage.trim() === '') ? 'ring-2 ring-error' : ''
+                    }`}
                   >
-                    {med.name} {med.dosage && med.dosage}
+                    <span className="font-medium">{med.name}</span>
+
+                    {editingDosage === med.name ? (
+                      <div className="flex items-center gap-1">
+                        <select
+                          className="bg-white/90 border border-secondary-container/50 rounded px-2 py-1 text-sm min-w-[80px]"
+                          value={med.dosage || ''}
+                          onChange={(e) => handleDosageChange(med.name, e.target.value)}
+                          onBlur={() => setEditingDosage(null)}
+                          autoFocus
+                        >
+                          <option value="">Dosage</option>
+                          {commonDosages.map((d) => (
+                            <option key={d} value={d}>{d}</option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className={`text-sm px-2 py-0.5 rounded transition-colors ${
+                          med.requiresDosage && (!med.dosage || med.dosage.trim() === '')
+                            ? 'bg-error/20 text-error font-bold hover:bg-error/30 cursor-pointer'
+                            : 'opacity-70 hover:opacity-100 bg-white/20'
+                        }`}
+                        onClick={() => setEditingDosage(med.name)}
+                      >
+                        {med.dosage || (med.requiresDosage ? '+ Dosage' : med.dosage)}
+                      </button>
+                    )}
+
                     <button
                       type="button"
-                      className="material-symbols-outlined text-[18px] cursor-pointer hover:text-red-600"
+                      className="material-symbols-outlined text-[18px] cursor-pointer hover:text-red-600 ml-1"
                       onClick={() => handleRemoveDrug(med.name)}
                     >
                       close
@@ -368,23 +522,31 @@ export default function IntakeForm() {
                 <button
                   type="button"
                   className="text-primary font-bold text-sm py-2 px-4 hover:bg-primary/5 rounded-full transition-all"
-                  onClick={() => document.querySelector('input[placeholder*="drug name"]').focus()}
+                  onClick={() => document.querySelector('input[placeholder*="drug name"]')?.focus()}
                 >
-                  + Add medication
+                  + {t('intake.medications.addMedication')}
                 </button>
               </div>
+
+              {userData.prescriptionType === 'self' && (
+                <div className="bg-tertiary/10 rounded-xl p-4 border border-tertiary/20">
+                  <p className="text-sm text-on-surface/70">
+                    <span className="material-symbols-outlined text-tertiary text-sm align-middle mr-1">info</span>
+                    Please enter the dosage for each medication. You can select from common dosages or enter a custom value.
+                  </p>
+                </div>
+              )}
             </div>
 
-            {/* Step 4: Conditions */}
             <div className="space-y-6">
               <label className="block text-xs font-bold text-on-surface/50 uppercase tracking-widest">
-                Step 4: Pre-existing Conditions
+                {t('intake.conditions.label')}
               </label>
               <div className="relative">
                 <span className="absolute left-5 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface/40" data-icon="medical_information">medical_information</span>
                 <input
                   className="w-full bg-surface-container-low border border-surface-container-high rounded-2xl py-5 pl-14 pr-5 text-lg focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-                  placeholder="Search health conditions (e.g. Diabetes, Heart Disease)"
+                  placeholder={t('intake.conditions.searchPlaceholder')}
                   type="text"
                   value={conditionSearch}
                   onChange={(e) => {
@@ -394,8 +556,7 @@ export default function IntakeForm() {
                   onFocus={() => setShowConditionDropdown(true)}
                   onBlur={() => setTimeout(() => setShowConditionDropdown(false), 200)}
                 />
-                
-                {/* Condition Dropdown */}
+
                 {showConditionDropdown && filteredConditions.length > 0 && (
                   <div className="absolute z-10 w-full mt-2 bg-white rounded-xl shadow-lg border border-surface-container-high max-h-60 overflow-y-auto">
                     {filteredConditions.map((condition) => (
@@ -411,7 +572,6 @@ export default function IntakeForm() {
                 )}
               </div>
 
-              {/* Condition Tags */}
               <div className="flex flex-wrap gap-3">
                 {editableConditions.map((condition) => (
                   <div
@@ -431,10 +591,9 @@ export default function IntakeForm() {
               </div>
             </div>
 
-            {/* Step 5: Upload Prescription */}
             <div className="space-y-6">
-              <label className="block text-xs font-bold text-on-surface/50 uppercase tracking-widest">
-                Step 5: Upload Prescription (Optional)
+              <label className="block text-xs font-bold text-on-surface/50 uppercase tracking-widest flex items-center gap-2">
+                {userData.prescriptionType === 'prescription' ? t('intake.upload.labelRequired') : t('intake.upload.labelOptional')}
               </label>
               <div
                 className="border-2 border-dashed border-primary-container/30 rounded-3xl p-10 flex flex-col items-center justify-center text-center hover:bg-surface-container-low transition-all cursor-pointer group"
@@ -448,26 +607,75 @@ export default function IntakeForm() {
                   onChange={handleFileUpload}
                 />
                 <div className="w-16 h-16 bg-primary-container/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <span className="material-symbols-outlined text-primary text-3xl" data-icon="add_a_photo">add_a_photo</span>
+                  {isProcessingPrescription ? (
+                    <span className="material-symbols-outlined text-primary text-3xl animate-spin">progress_activity</span>
+                  ) : (
+                    <span className="material-symbols-outlined text-primary text-3xl" data-icon="add_a_photo">add_a_photo</span>
+                  )}
                 </div>
-                {uploadedFile ? (
+                {isProcessingPrescription ? (
                   <div>
-                    <h3 className="text-on-surface font-bold text-lg">{uploadedFile.name}</h3>
-                    <p className="text-on-surface/60 mt-1 max-w-[280px]">File uploaded successfully. Click to replace.</p>
+                    <h3 className="text-on-surface font-bold text-lg">{t('intake.upload.processing')}</h3>
+                    <p className="text-primary mt-1 max-w-[280px]">{prescriptionProcessingStatus}</p>
+                    <div className="mt-4 w-48 mx-auto h-2 bg-surface-container-high rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
+                    </div>
+                  </div>
+                ) : uploadedFile ? (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="material-symbols-outlined text-success" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                      <h3 className="text-on-surface font-bold text-lg">{uploadedFile.name}</h3>
+                    </div>
+                    <p className="text-on-surface/60 mt-1 max-w-[280px]">
+                      {prescriptionProcessingStatus || t('intake.upload.subtitle')}
+                    </p>
                   </div>
                 ) : (
                   <div>
-                    <h3 className="text-on-surface font-bold text-lg">Snap or Drag File</h3>
-                    <p className="text-on-surface/60 mt-1 max-w-[280px]">Upload a photo of your prescription for an even faster analysis.</p>
+                    <h3 className="text-on-surface font-bold text-lg">{t('intake.upload.title')}</h3>
+                    <p className="text-on-surface/60 mt-1 max-w-[280px]">{t('intake.upload.subtitle')}</p>
                     <span className="mt-4 px-8 py-2.5 bg-primary-container text-white font-bold rounded-xl text-sm shadow-sm inline-block">
-                      Choose File
+                      {t('intake.upload.chooseFile')}
                     </span>
                   </div>
                 )}
               </div>
+
+              {extractedMedications.length > 0 && (
+                <div className="bg-surface-container-low rounded-2xl p-4 border border-surface-container-high">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+                    <span className="font-bold text-on-surface">{t('intake.upload.aiExtracted')}</span>
+                  </div>
+                  <p className="text-sm text-on-surface-variant mb-3">
+                    {t('intake.upload.aiExtractedSubtitle')}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {extractedMedications.map((med) => (
+                      <span
+                        key={med.name}
+                        className="bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2"
+                      >
+                        <span className="material-symbols-outlined text-xs">medication</span>
+                        {med.name}
+                        {med.dosage && med.dosage !== 'Not specified' && (
+                          <span className="text-xs opacity-70">{med.dosage}</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveExtractedMed(med.name)}
+                          className="material-symbols-outlined text-[14px] hover:text-error ml-1"
+                        >
+                          close
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Final CTA */}
             <div className="pt-8">
               <button
                 type="submit"
@@ -478,11 +686,13 @@ export default function IntakeForm() {
                 }`}
                 disabled={!isFormValid}
               >
-                Run Friendly Analysis
+                {userData.prescriptionType === 'prescription' && !uploadedFile
+                  ? t('intake.submit.uploadToContinue')
+                  : t('intake.submit.runAnalysis')}
               </button>
               <p className="text-center text-on-surface/40 text-sm mt-6 flex items-center justify-center gap-2">
                 <span className="material-symbols-outlined text-[16px] text-primary" data-icon="lock" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
-                Your medical data is encrypted and HIPAA compliant.
+                {t('intake.submit.privacyNote')}
               </p>
             </div>
           </form>

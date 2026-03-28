@@ -1,11 +1,21 @@
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
-import { getSeverityColor } from '../services/rxlabelguard';
+import { downloadReport, printReport } from '../services/reportGenerator';
 
 export default function InteractionDeepDive() {
-  const { selectedInteraction, setCurrentScreen, analysisResults, aiAnalysis } = useApp();
+  const { t } = useTranslation();
+  const { selectedInteraction, setSelectedInteraction, setCurrentScreen, analysisResults, aiAnalysis, userData } = useApp();
 
   const interaction = selectedInteraction;
-  const severity = interaction ? getSeverityColor(interaction.severity) : null;
+  const interactions = analysisResults?.interactions || [];
+
+  const handleDownloadReport = () => {
+    downloadReport(analysisResults, aiAnalysis, userData);
+  };
+
+  const handlePrintReport = () => {
+    printReport(analysisResults, aiAnalysis, userData);
+  };
 
   const severityInfo = {
     contraindicated: { level: 'Critical', percent: 95, label: 'Do Not Combine' },
@@ -17,22 +27,116 @@ export default function InteractionDeepDive() {
 
   const info = interaction ? severityInfo[interaction.severity] || severityInfo.unknown : severityInfo.unknown;
 
+  const interactionsListText = interactions.length > 0 
+    ? `${interactions.length} ${t('results.interactions.found').replace('{{count}}', '')}`
+    : t('results.interactions.noInteractions.title');
+
   if (!interaction) {
     return (
       <div className="max-w-5xl mx-auto">
-        <div className="bg-surface-container-low rounded-3xl p-12 text-center border border-outline-variant/10">
-          <div className="w-20 h-20 bg-surface-container-high rounded-full flex items-center justify-center mx-auto mb-6">
-            <span className="material-symbols-outlined text-on-surface/40 text-4xl">search</span>
+        <header className="mb-8 flex flex-wrap justify-between items-start gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-primary font-bold mb-6">
+              <div className="flex items-center gap-2 bg-secondary-container/30 px-4 py-1.5 rounded-full">
+                <span className="material-symbols-outlined text-sm" data-icon="favorite">favorite</span>
+                <span className="text-xs tracking-wider uppercase">{t('deepDive.header.safetyBanner')}</span>
+              </div>
+            </div>
+            <h1 className="text-[2.5rem] font-bold text-on-surface leading-tight tracking-tight mb-4">
+              {t('results.interactions.title')}
+            </h1>
+            <p className="text-lg text-on-surface-variant max-w-2xl font-normal">
+              {interactionsListText}
+            </p>
           </div>
-          <h2 className="text-2xl font-bold text-on-surface mb-4">No Interaction Selected</h2>
-          <p className="text-on-surface/60 max-w-md mx-auto mb-8">
-            Please select an interaction from the results page to view detailed information.
-          </p>
+          <div className="flex gap-3 mt-4">
+            <button
+              onClick={handlePrintReport}
+              className="flex items-center gap-2 bg-surface-container-high text-on-surface px-5 py-3 rounded-xl font-bold hover:bg-surface-container-low transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined">print</span>
+              {t('results.actions.print')}
+            </button>
+            <button
+              onClick={handleDownloadReport}
+              className="flex items-center gap-2 bg-primary text-white px-5 py-3 rounded-xl font-bold hover:opacity-90 transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined">download</span>
+              {t('results.actions.download')}
+            </button>
+          </div>
+        </header>
+
+        {interactions.length === 0 ? (
+          <div className="bg-success/10 rounded-3xl p-12 text-center border border-success/20">
+            <div className="w-20 h-20 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <span className="material-symbols-outlined text-success text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+            </div>
+            <h2 className="text-2xl font-bold text-on-surface mb-2">{t('results.interactions.noInteractions.title')}</h2>
+            <p className="text-on-surface/60 max-w-md mx-auto mb-8">
+              {t('results.interactions.noInteractions.message')}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {interactions.map((intx) => (
+              <div
+                key={intx.id}
+                className={`rounded-3xl overflow-hidden border shadow-lg cursor-pointer hover:shadow-xl transition-all ${
+                  intx.severity === 'contraindicated' ? 'border-error bg-error-container/30' :
+                  intx.severity === 'major' ? 'border-orange-400 bg-orange-50' :
+                  intx.severity === 'moderate' ? 'border-yellow-400 bg-yellow-50' :
+                  'border-success/30 bg-success/10'
+                }`}
+                onClick={() => {
+                  setSelectedInteraction(intx);
+                }}
+              >
+                <div className="p-6 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                      intx.severity === 'contraindicated' ? 'bg-error text-white' :
+                      intx.severity === 'major' ? 'bg-orange-500 text-white' :
+                      intx.severity === 'moderate' ? 'bg-yellow-500 text-white' :
+                      'bg-success text-white'
+                    }`}>
+                      <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+                        {intx.severity === 'contraindicated' || intx.severity === 'major' ? 'warning' : 'info'}
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-on-surface">{intx.drugs.join(' + ')}</h3>
+                      <p className={`text-sm ${
+                        intx.severity === 'contraindicated' ? 'text-error' :
+                        intx.severity === 'major' ? 'text-orange-600' :
+                        intx.severity === 'moderate' ? 'text-yellow-700' :
+                        'text-success'
+                      }`}>{intx.risk}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`px-3 py-1 rounded-full text-sm font-bold uppercase ${
+                      intx.severity === 'contraindicated' ? 'bg-error text-white' :
+                      intx.severity === 'major' ? 'bg-orange-500 text-white' :
+                      intx.severity === 'moderate' ? 'bg-yellow-500 text-white' :
+                      'bg-success text-white'
+                    }`}>
+                      {intx.severity}
+                    </span>
+                    <span className="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-8 text-center">
           <button
             onClick={() => setCurrentScreen('results')}
             className="bg-primary text-white px-8 py-4 rounded-xl font-bold hover:opacity-90 transition-all"
           >
-            Back to Results
+            {t('common.back')}
           </button>
         </div>
       </div>
@@ -42,35 +146,67 @@ export default function InteractionDeepDive() {
   return (
     <div className="max-w-5xl mx-auto">
       {/* Header Section */}
-      <header className="mb-12">
-        <div className="flex items-center gap-2 text-primary font-bold mb-6">
-          <div className="flex items-center gap-2 bg-secondary-container/30 px-4 py-1.5 rounded-full">
-            <span className="material-symbols-outlined text-sm" data-icon="favorite">favorite</span>
-            <span className="text-xs tracking-wider uppercase">Your safety matters</span>
+      <header className="mb-12 flex flex-wrap justify-between items-start gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-primary font-bold mb-6">
+            <div className="flex items-center gap-2 bg-secondary-container/30 px-4 py-1.5 rounded-full">
+              <span className="material-symbols-outlined text-sm" data-icon="favorite">favorite</span>
+              <span className="text-xs tracking-wider uppercase">{t('deepDive.header.safetyBanner')}</span>
+            </div>
           </div>
+          <div
+            className="flex items-center gap-2 text-on-surface-variant/60 mb-4 hover:text-primary cursor-pointer transition-colors w-fit"
+            onClick={() => setCurrentScreen('results')}
+          >
+            <span className="material-symbols-outlined text-sm font-bold">arrow_back</span>
+            <span className="text-sm font-bold tracking-wider uppercase">{t('deepDive.header.backToSummary')}</span>
+          </div>
+          <h1 className="text-[3rem] font-bold text-on-surface leading-tight tracking-tight mb-4">
+            {t('deepDive.header.title')}
+          </h1>
+          <p className="text-xl text-on-surface-variant max-w-2xl font-normal">
+            {t('deepDive.header.subtitle', { drug1: interaction.drugs[0], drug2: interaction.drugs[1] })}
+          </p>
         </div>
-        <div
-          className="flex items-center gap-2 text-on-surface-variant/60 mb-4 hover:text-primary cursor-pointer transition-colors w-fit"
-          onClick={() => setCurrentScreen('results')}
-        >
-          <span className="material-symbols-outlined text-sm font-bold">arrow_back</span>
-          <span className="text-sm font-bold tracking-wider uppercase">Back to Summary</span>
+        <div className="flex gap-3 mt-4">
+          <button
+            onClick={handlePrintReport}
+            className="flex items-center gap-2 bg-surface-container-high text-on-surface px-5 py-3 rounded-xl font-bold hover:bg-surface-container-low transition-all cursor-pointer"
+          >
+            <span className="material-symbols-outlined">print</span>
+            {t('results.actions.print')}
+          </button>
+          <button
+            onClick={handleDownloadReport}
+            className="flex items-center gap-2 bg-primary text-white px-5 py-3 rounded-xl font-bold hover:opacity-90 transition-all cursor-pointer"
+          >
+            <span className="material-symbols-outlined">download</span>
+            {t('results.actions.download')}
+          </button>
         </div>
-        <h1 className="text-[3rem] font-bold text-on-surface leading-tight tracking-tight mb-4">
-          Detailed Interaction Analysis
-        </h1>
-        <p className="text-xl text-on-surface-variant max-w-2xl font-normal">
-          In-depth clinical analysis of the interaction between <span className="font-bold text-primary">{interaction.drugs[0]}</span> and <span className="font-bold text-primary">{interaction.drugs[1]}</span>.
-        </p>
       </header>
 
-      {/* Interaction Alert Hero Card */}
-      <section className="mb-12 rounded-3xl overflow-hidden bg-gradient-to-br from-error-container/50 to-surface-container-high p-1 shadow-sm">
+      {/* Interaction Alert Hero Card - Color Coded by Severity */}
+      <section className={`mb-12 rounded-3xl overflow-hidden p-1 shadow-sm ${
+        interaction.severity === 'contraindicated' ? 'bg-gradient-to-br from-red-500 to-red-700' :
+        interaction.severity === 'major' ? 'bg-gradient-to-br from-orange-500 to-orange-600' :
+        interaction.severity === 'moderate' ? 'bg-gradient-to-br from-yellow-500 to-yellow-600' :
+        'bg-gradient-to-br from-green-500 to-green-600'
+      }`}>
         <div className="bg-surface-container-lowest rounded-[1.25rem] p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
           <div className="flex items-center gap-6">
-            <div className={`w-20 h-20 rounded-2xl ${severity.text === 'text-error' ? 'bg-error/10' : severity.text === 'text-tertiary' ? 'bg-tertiary/10' : 'bg-success/10'} flex items-center justify-center`}>
-              <span className={`material-symbols-outlined text-4xl ${severity.text}`} style={{ fontVariationSettings: "'FILL' 1" }}>
-                {severity.text === 'text-error' ? 'warning' : 'info'}
+            <div className={`w-20 h-20 rounded-2xl flex items-center justify-center ${
+              interaction.severity === 'contraindicated' ? 'bg-red-100' :
+              interaction.severity === 'major' ? 'bg-orange-100' :
+              interaction.severity === 'moderate' ? 'bg-yellow-100' :
+              'bg-green-100'
+            }`}>
+              <span className={`material-symbols-outlined text-4xl ${
+                interaction.severity === 'contraindicated' || interaction.severity === 'major' ? 'text-red-600' :
+                interaction.severity === 'moderate' ? 'text-yellow-600' :
+                'text-green-600'
+              }`} style={{ fontVariationSettings: "'FILL' 1" }}>
+                {interaction.severity === 'contraindicated' || interaction.severity === 'major' ? 'warning' : 'info'}
               </span>
             </div>
             <div>
@@ -80,15 +216,27 @@ export default function InteractionDeepDive() {
                 <span className="text-[1.75rem] font-bold text-on-surface">{interaction.drugs[1]}</span>
               </div>
               <div className="flex items-center gap-3 flex-wrap">
-                <span className={`${severity.badge} px-4 py-1 rounded-lg font-black text-sm uppercase tracking-wider`}>
+                <span className={`px-4 py-1 rounded-lg font-black text-sm uppercase tracking-wider ${
+                  interaction.severity === 'contraindicated' ? 'bg-red-600 text-white' :
+                  interaction.severity === 'major' ? 'bg-orange-500 text-white' :
+                  interaction.severity === 'moderate' ? 'bg-yellow-500 text-white' :
+                  'bg-green-500 text-white'
+                }`}>
                   {info.label}
                 </span>
-                <span className="text-on-surface-variant text-sm font-semibold">Risk: {interaction.risk}</span>
+                <span className={`text-sm font-semibold ${
+                  interaction.severity === 'contraindicated' ? 'text-red-600' :
+                  interaction.severity === 'major' ? 'text-orange-600' :
+                  interaction.severity === 'moderate' ? 'text-yellow-700' :
+                  'text-green-600'
+                }`}>
+                  Risk: {interaction.risk}
+                </span>
               </div>
             </div>
           </div>
           <div className="flex flex-col items-end">
-            <span className="text-[0.7rem] font-black text-on-surface-variant/40 tracking-widest uppercase mb-2">Data Privacy</span>
+            <span className="text-[0.7rem] font-black text-on-surface-variant/40 tracking-widest uppercase mb-2">{t('deepDive.header.privacy')}</span>
             <div className="flex items-center gap-3 bg-surface-container-low border border-outline-variant/30 px-4 py-2 rounded-full">
               <span className="text-sm font-bold">Anonymous Mode</span>
               <div className="w-10 h-5 bg-primary-container rounded-full relative">
@@ -106,45 +254,56 @@ export default function InteractionDeepDive() {
           <section className="bg-surface-container-low border border-outline-variant/20 rounded-3xl p-8">
             <h3 className="text-xl font-bold mb-6 flex items-center gap-3 text-primary">
               <span className="material-symbols-outlined">biotech</span>
-              Clinical Analysis
+              {t('deepDive.clinical.title')}
             </h3>
             <div className="space-y-6 text-[18px] leading-relaxed text-on-surface-variant">
               <p>{interaction.description}</p>
               
               {interaction.mechanism && (
                 <div className="p-6 bg-surface-container-high/40 rounded-2xl border-l-4 border-primary">
-                  <h4 className="font-bold text-on-surface mb-2">Mechanism of Interaction</h4>
+                  <h4 className="font-bold text-on-surface mb-2">{t('deepDive.mechanism.title')}</h4>
                   <p className="italic font-medium">{interaction.mechanism}</p>
                 </div>
               )}
 
               {aiAnalysis?.riskExplanation && (
                 <div className="p-6 bg-secondary-container/20 rounded-2xl border-l-4 border-secondary-container">
-                  <h4 className="font-bold text-on-secondary-container mb-2">Personalized Context</h4>
+                  <h4 className="font-bold text-on-secondary-container mb-2">{t('deepDive.personalized.title')}</h4>
                   <p className="text-on-surface-variant">{aiAnalysis.riskExplanation}</p>
                 </div>
               )}
             </div>
           </section>
 
-          {/* Recommendations */}
+          {/* recommendations */}
           <section className="bg-surface-container-low border border-outline-variant/20 rounded-3xl p-8">
             <h3 className="text-xl font-bold mb-6 flex items-center gap-3 text-primary">
               <span className="material-symbols-outlined">rule</span>
-              Safety Recommendations
+              {t('deepDive.recommendations.title')}
             </h3>
             <div className="space-y-4">
               {interaction.recommendations?.map((rec, index) => (
                 <div
                   key={index}
                   className={`flex items-start gap-4 p-5 bg-surface-container-lowest border rounded-2xl hover:border-primary-container transition-colors group ${
-                    rec.startsWith('⚠️') ? 'border-orange-300 bg-orange-50' : 'border-outline-variant/10'
+                    rec.startsWith('⚠️') ? 'border-orange-300 bg-orange-50' :
+                    rec.includes('DO NOT') || rec.includes('Seek immediate') ? 
+                      (interaction.severity === 'contraindicated' ? 'border-red-300 bg-red-50' : 'border-orange-300 bg-orange-50') :
+                    'border-outline-variant/10'
                   }`}
                 >
-                  <span className="material-symbols-outlined text-primary mt-1 group-hover:scale-110 transition-transform">
-                    {rec.startsWith('⚠️') ? 'warning' : rec.includes('DO NOT') ? 'block' : 'check_circle'}
+                  <span className={`material-symbols-outlined mt-1 group-hover:scale-110 transition-transform ${
+                    rec.startsWith('⚠️') ? 'text-orange-600' :
+                    rec.includes('DO NOT') || rec.includes('Seek immediate') ? 'text-red-600' :
+                    'text-green-600'
+                  }`}>
+                    {rec.startsWith('⚠️') ? 'warning' : rec.includes('DO NOT') || rec.includes('Seek immediate') ? 'block' : 'check_circle'}
                   </span>
-                  <p className={`text-on-surface font-medium ${rec.startsWith('⚠️') ? 'text-orange-700' : ''}`}>{rec}</p>
+                  <p className={`text-on-surface font-medium ${
+                    rec.startsWith('⚠️') ? 'text-orange-700' :
+                    rec.includes('DO NOT') || rec.includes('Seek immediate') ? 'text-red-700' :
+                    ''
+                  }`}>{rec}</p>
                 </div>
               ))}
             </div>
@@ -155,28 +314,42 @@ export default function InteractionDeepDive() {
         <div className="space-y-8">
           {/* Severity Meter */}
           <section className="bg-surface-container-low border border-outline-variant/20 rounded-3xl p-8">
-            <h3 className="text-xs font-black tracking-widest uppercase text-on-surface-variant/60 mb-6">Risk Assessment</h3>
-            <div className="relative h-3 w-full bg-surface-container-high rounded-full mb-8 overflow-hidden">
+            <h3 className="text-xs font-black tracking-widest uppercase text-on-surface-variant/60 mb-6">{t('deepDive.riskAssessment.title')}</h3>
+            <div className={`relative h-3 w-full rounded-full mb-8 overflow-hidden ${
+              interaction.severity === 'contraindicated' ? 'bg-red-200' :
+              interaction.severity === 'major' ? 'bg-orange-200' :
+              interaction.severity === 'moderate' ? 'bg-yellow-200' :
+              'bg-green-200'
+            }`}>
               <div 
                 className="absolute left-0 top-0 h-full rounded-full transition-all duration-500"
                 style={{ 
                   width: `${info.percent}%`,
-                  backgroundColor: severity.text === 'text-error' ? '#D32F2F' : severity.text === 'text-tertiary' ? '#E9C46A' : '#2ECC71'
+                  backgroundColor: 
+                    interaction.severity === 'contraindicated' ? '#D32F2F' :
+                    interaction.severity === 'major' ? '#F97316' :
+                    interaction.severity === 'moderate' ? '#EAB308' :
+                    '#22C55E'
                 }}
               />
             </div>
             <div className="space-y-4">
               <div className="flex justify-between items-center text-sm">
-                <span className="font-bold text-on-surface-variant">Severity Level</span>
-                <span className={`font-black ${severity.text}`}>{info.level}</span>
+                <span className="font-bold text-on-surface-variant">{t('deepDive.riskAssessment.severityLevel')}</span>
+                <span className={`font-black ${
+                  interaction.severity === 'contraindicated' ? 'text-red-600' :
+                  interaction.severity === 'major' ? 'text-orange-600' :
+                  interaction.severity === 'moderate' ? 'text-yellow-700' :
+                  'text-green-600'
+                }`}>{info.level}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="font-bold text-on-surface-variant">Risk Category</span>
+                <span className="font-bold text-on-surface-variant">{t('deepDive.riskAssessment.riskCategory')}</span>
                 <span className="font-black text-on-surface">{info.label}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="font-bold text-on-surface-variant">Evidence</span>
-                <span className="font-black text-on-surface">FDA Label Data</span>
+                <span className="font-bold text-on-surface-variant">{t('deepDive.riskAssessment.evidence')}</span>
+                <span className="font-black text-on-surface">{t('deepDive.riskAssessment.evidenceValue')}</span>
               </div>
             </div>
           </section>
@@ -186,7 +359,7 @@ export default function InteractionDeepDive() {
             <section className="bg-gradient-to-br from-primary/10 to-primary-container/20 rounded-3xl p-8 border border-primary/20">
               <div className="flex items-center gap-2 mb-4">
                 <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>psychology</span>
-                <h3 className="text-lg font-bold text-primary">AI Analysis</h3>
+                <h3 className="text-lg font-bold text-primary">{t('deepDive.aiAnalysis.title')}</h3>
               </div>
               <div className="space-y-4">
                 {aiAnalysis.personalizedAdvice?.map((advice, i) => (
@@ -203,13 +376,13 @@ export default function InteractionDeepDive() {
           <section className="bg-primary text-white rounded-3xl p-8 shadow-xl shadow-primary-container/30 relative overflow-hidden group">
             <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform" />
             <span className="material-symbols-outlined text-4xl mb-4" style={{ fontVariationSettings: "'FILL' 1" }}>support_agent</span>
-            <h3 className="text-xl font-bold mb-2">Need Professional Help?</h3>
+            <h3 className="text-xl font-bold mb-2">{t('deepDive.consultation.title')}</h3>
             <p className="text-white/80 text-sm mb-6 leading-relaxed font-medium">
-              Connect with a clinical pharmacist to discuss how this interaction applies to your specific health history.
+              {t('deepDive.consultation.subtitle')}
             </p>
             <button className="w-full bg-white text-primary py-4 rounded-2xl font-black hover:bg-secondary-container transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95">
               <span className="material-symbols-outlined">phone</span>
-              Consult a Pharmacist
+              {t('deepDive.consultation.button')}
             </button>
           </section>
 
@@ -217,10 +390,10 @@ export default function InteractionDeepDive() {
           <section className="p-6 border border-outline-variant/20 rounded-3xl bg-surface-container-lowest">
             <div className="flex items-center gap-3 mb-4">
               <span className="material-symbols-outlined text-primary-container font-bold">lock</span>
-              <span className="text-xs font-black text-on-surface uppercase tracking-widest">Privacy</span>
+              <span className="text-xs font-black text-on-surface uppercase tracking-widest">{t('deepDive.privacy.title')}</span>
             </div>
             <p className="text-xs text-on-surface-variant leading-relaxed font-medium">
-              Your interaction data is processed locally. <span className="font-bold text-primary">Your data is never stored</span> on our servers.
+              {t('deepDive.privacy.message')}
             </p>
           </section>
         </div>
@@ -233,7 +406,7 @@ export default function InteractionDeepDive() {
           className="bg-primary text-white px-12 py-4 rounded-2xl font-bold text-lg hover:opacity-90 transition-all shadow-lg flex items-center gap-3 mx-auto"
         >
           <span className="material-symbols-outlined">arrow_forward</span>
-          View Complete Recommendations
+          {t('deepDive.continue.button')}
         </button>
       </div>
     </div>

@@ -89,53 +89,55 @@ export async function extractDrugsFromPDF(pdfFile) {
       const arrayBuffer = e.target.result;
       
       try {
-        const pdfjsLib = window.pdfjsLib;
-        if (pdfjsLib) {
-          const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-          let fullText = '';
-          
-          for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const textContent = await page.getTextContent();
-            const pageText = textContent.items.map(item => item.str).join(' ');
-            fullText += pageText + '\n';
-          }
-          
-          const foundDrugs = [];
-          for (const pattern of commonDrugPatterns) {
-            const match = fullText.match(pattern);
-            if (match) {
-              const drugName = match[0];
-              if (!foundDrugs.some(d => d.name.toLowerCase() === drugName.toLowerCase())) {
-                foundDrugs.push({
-                  name: capitalizeFirstLetter(drugName),
-                  category: 'Detected',
-                  dosage: 'Unknown',
-                });
-              }
+        const pdfjsLib = await import('pdfjs-dist');
+        
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
+        
+        const loadingTask = pdfjsLib.getDocument({ 
+          data: arrayBuffer,
+          cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/cmaps/',
+          cMapPacked: true,
+        });
+        
+        const pdf = await loadingTask.promise;
+        let fullText = '';
+        
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items.map(item => item.str).join(' ');
+          fullText += pageText + '\n';
+        }
+        
+        const foundDrugs = [];
+        for (const pattern of commonDrugPatterns) {
+          const match = fullText.match(pattern);
+          if (match) {
+            const drugName = match[0];
+            if (!foundDrugs.some(d => d.name.toLowerCase() === drugName.toLowerCase())) {
+              foundDrugs.push({
+                name: capitalizeFirstLetter(drugName),
+                category: 'Detected',
+                dosage: 'Unknown',
+              });
             }
           }
-          
-          resolve({
-            success: true,
-            drugs: foundDrugs,
-            rawText: fullText,
-            message: foundDrugs.length > 0
-              ? `Found ${foundDrugs.length} medication${foundDrugs.length > 1 ? 's' : ''} in the prescription`
-              : 'No medications detected. Please add them manually.',
-          });
-        } else {
-          resolve({
-            success: false,
-            drugs: [],
-            message: 'PDF processing library not loaded. Please add medications manually.',
-          });
         }
+        
+        resolve({
+          success: true,
+          drugs: foundDrugs,
+          rawText: fullText,
+          message: foundDrugs.length > 0
+            ? `Found ${foundDrugs.length} medication${foundDrugs.length > 1 ? 's' : ''} in the prescription`
+            : 'No medications detected. Please add them manually.',
+        });
       } catch (error) {
+        console.error('PDF processing error:', error);
         resolve({
           success: false,
           drugs: [],
-          message: 'Failed to process PDF. Please add medications manually.',
+          message: 'PDF processing failed. Please use an image file (JPG/PNG) or add medications manually.',
           error: error.message,
         });
       }

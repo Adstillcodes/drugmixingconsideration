@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback } from 'react';
 import { checkDrugInteractions } from '../services/rxlabelguard';
+import { generateAnalysisSummary, initializeAIEngine } from '../services/aiSummary';
 
 const AppContext = createContext();
 
@@ -20,55 +21,63 @@ export function AppProvider({ children }) {
   const [selectedInteraction, setSelectedInteraction] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState(0);
+  const [aiDownloadProgress, setAiDownloadProgress] = useState(0);
+  const [isAiDownloading, setIsAiDownloading] = useState(false);
   const [processingMessage, setProcessingMessage] = useState('');
   const [error, setError] = useState(null);
 
-  const updateUserData = (updates) => {
+  const updateUserData = useCallback((updates) => {
     setUserData((prev) => ({ ...prev, ...updates }));
-  };
+  }, []);
 
-  const addMedication = (medication) => {
-    if (!userData.medications.find((m) => m.name === medication.name)) {
-      setUserData((prev) => ({
+  const addMedication = useCallback((medication) => {
+    setUserData((prev) => {
+      if (prev.medications.find((m) => m.name === medication.name)) {
+        return prev;
+      }
+      return {
         ...prev,
         medications: [...prev.medications, medication],
-      }));
-    }
-  };
+      };
+    });
+  }, []);
 
-  const removeMedication = (medicationName) => {
+  const removeMedication = useCallback((medicationName) => {
     setUserData((prev) => ({
       ...prev,
       medications: prev.medications.filter((m) => m.name !== medicationName),
     }));
-  };
+  }, []);
 
-  const addCondition = (condition) => {
-    if (!userData.conditions.includes(condition)) {
-      setUserData((prev) => ({
+  const addCondition = useCallback((condition) => {
+    setUserData((prev) => {
+      if (prev.conditions.includes(condition)) {
+        return prev;
+      }
+      return {
         ...prev,
         conditions: [...prev.conditions, condition],
-      }));
-    }
-  };
+      };
+    });
+  }, []);
 
-  const removeCondition = (condition) => {
+  const removeCondition = useCallback((condition) => {
     setUserData((prev) => ({
       ...prev,
       conditions: prev.conditions.filter((c) => c !== condition),
     }));
-  };
+  }, []);
 
-  const navigateTo = (screen) => {
+  const navigateTo = useCallback((screen) => {
     setCurrentScreen(screen);
-  };
+  }, []);
 
-  const clearAnalysis = () => {
+  const clearAnalysis = useCallback(() => {
     setAnalysisResults(null);
     setAiAnalysis(null);
     setSelectedInteraction(null);
     setError(null);
-  };
+  }, []);
 
   const startAnalysis = useCallback(async (medications, conditions) => {
     if (!medications || medications.length < 2) {
@@ -83,16 +92,16 @@ export function AppProvider({ children }) {
 
     try {
       setProcessingStep(10);
-      setProcessingMessage('Connecting to FDA drug database...');
-      await sleep(300);
+      setProcessingMessage('Connecting to drug database...');
+      await sleep(200);
 
-      setProcessingStep(25);
+      setProcessingStep(20);
       setProcessingMessage('Analyzing medication combinations...');
-      await sleep(300);
+      await sleep(200);
 
-      setProcessingStep(40);
+      setProcessingStep(30);
       setProcessingMessage('Checking for drug-drug interactions...');
-      
+
       const userContext = {
         gender: userData.gender,
         age: userData.age,
@@ -102,24 +111,37 @@ export function AppProvider({ children }) {
       };
 
       const result = await checkDrugInteractions(medications, userContext);
-      
-      setProcessingStep(60);
+
+      setProcessingStep(50);
       setProcessingMessage('Processing results...');
-      await sleep(300);
+      await sleep(200);
 
       if (!result.success) {
         throw new Error('Analysis failed');
       }
 
-      setProcessingStep(75);
-      setProcessingMessage('Generating AI-powered insights...');
+      setProcessingStep(60);
+      setProcessingMessage('Initializing AI engine...');
       
-      const aiInsights = generateAIInsights(result, medications, userContext);
+      setIsAiDownloading(true);
+      setAiDownloadProgress(0);
+      
+      await initializeAIEngine((progress) => {
+        setAiDownloadProgress(progress);
+      });
+
+      setIsAiDownloading(false);
+      setProcessingStep(70);
+      setProcessingMessage('Generating AI-powered insights...');
+      await sleep(200);
+
+      const aiInsights = await generateAnalysisSummary(result, { ...userData, conditions, medications });
+
       setAiAnalysis(aiInsights);
 
       setProcessingStep(90);
       setProcessingMessage('Finalizing report...');
-      await sleep(300);
+      await sleep(200);
 
       setProcessingStep(100);
       setProcessingMessage('Analysis complete!');
@@ -131,7 +153,7 @@ export function AppProvider({ children }) {
         userContext: userContext,
       });
 
-      await sleep(500);
+      await sleep(300);
 
       setIsProcessing(false);
       setCurrentScreen('results');
@@ -143,10 +165,10 @@ export function AppProvider({ children }) {
     }
   }, [userData, setCurrentScreen]);
 
-  const resetAnalysis = () => {
+  const resetAnalysis = useCallback(() => {
     clearAnalysis();
     setCurrentScreen('intake');
-  };
+  }, [clearAnalysis, setCurrentScreen]);
 
   return (
     <AppContext.Provider
@@ -169,6 +191,8 @@ export function AppProvider({ children }) {
         setIsProcessing,
         processingStep,
         processingMessage,
+        aiDownloadProgress,
+        isAiDownloading,
         startAnalysis,
         clearAnalysis,
         resetAnalysis,
@@ -182,71 +206,7 @@ export function AppProvider({ children }) {
 }
 
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function generateAIInsights(results, medications, userContext) {
-  const { summary, interactions } = results;
-  
-  let insights = {
-    overview: '',
-    keyConcerns: [],
-    personalizedAdvice: [],
-    riskExplanation: '',
-  };
-
-  if (summary.riskLevel === 'safe' || summary.riskLevel === 'low') {
-    insights.overview = `Good news! Based on our analysis of ${medications.length} medications, no significant interactions were detected. Your medication combination appears to be generally safe.`;
-    
-    insights.keyConcerns = [
-      'Continue taking medications as prescribed',
-      'Report any unusual symptoms to your doctor',
-      'Keep a list of all medications for healthcare visits',
-    ];
-    
-    insights.personalizedAdvice = [
-      'Take each medication at the recommended time',
-      'Maintain consistent dosing schedule',
-      'Stay hydrated and maintain a healthy lifestyle',
-    ];
-  } else if (summary.riskLevel === 'moderate') {
-    insights.overview = `We found ${summary.totalInteractions} moderate interaction(s) between your medications. While not immediately dangerous, these combinations should be monitored.`;
-    
-    insights.keyConcerns = interactions
-      .filter(i => i.severity === 'moderate')
-      .map(i => `${i.drugs[0]} + ${i.drugs[1]}: ${i.risk}`);
-    
-    insights.personalizedAdvice = [
-      'Schedule a consultation with your doctor',
-      'Monitor for specific symptoms listed in the details',
-      'Do not stop medications without medical advice',
-    ];
-  } else if (summary.riskLevel === 'high' || summary.riskLevel === 'critical') {
-    const severity = summary.riskLevel === 'critical' ? 'serious' : 'significant';
-    insights.overview = `⚠️ Alert: We detected ${summary.totalInteractions} ${severity} interaction(s) that require immediate attention. Some combinations may be harmful.`;
-    
-    insights.keyConcerns = interactions
-      .filter(i => i.severity === 'major' || i.severity === 'contraindicated')
-      .map(i => `${i.drugs[0]} + ${i.drugs[1]}: ${i.risk} (${i.severity.toUpperCase()})`);
-    
-    insights.personalizedAdvice = [
-      'Contact your healthcare provider immediately',
-      'Do not combine these medications without medical supervision',
-      'Consider the alternative medications suggested',
-    ];
-  }
-
-  if (userContext.gender === 'female' && (userContext.pregnant || userContext.lactating)) {
-    insights.personalizedAdvice.unshift(
-      'Important: Given your pregnancy/breastfeeding status, consult your OB/GYN before making any medication changes.'
-    );
-  }
-
-  if (userContext.conditions?.length > 0) {
-    insights.riskExplanation = `Your listed conditions (${userContext.conditions.join(', ')}) have been factored into this analysis.`;
-  }
-
-  return insights;
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export function useApp() {
