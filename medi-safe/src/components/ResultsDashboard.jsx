@@ -119,21 +119,18 @@ export default function ResultsDashboard() {
               <div className="relative w-64 h-64 flex items-center justify-center mb-6">
                 <svg className="w-full h-full transform -rotate-90">
                   <circle 
-                    className="text-surface-container-high" 
                     cx="128" cy="128" 
                     fill="transparent" 
                     r="110" 
-                    stroke="currentColor" 
+                    stroke="#E5E7EB" 
                     strokeWidth="24" 
                   />
                   <circle
-                    className={riskColors.gauge ? '' : 'text-surface-container-high'}
-                    style={{ color: riskColors.gauge || '#FDEEDC' }}
                     cx="128"
                     cy="128"
                     fill="transparent"
                     r="110"
-                    stroke="currentColor"
+                    stroke={riskColors}
                     strokeDasharray="691"
                     strokeDashoffset={getGaugeOffset(summary?.riskPercentage || 0)}
                     strokeLinecap="round"
@@ -144,7 +141,7 @@ export default function ResultsDashboard() {
                   <span className="text-4xl font-extrabold text-on-surface">
                     {summary?.riskPercentage || 0}%
                   </span>
-                  <span className="text-lg font-bold" style={{ color: riskColors.gauge }}>
+                  <span className="text-lg font-bold" style={{ color: riskColors }}>
                     {getRiskLabel(summary?.riskLevel || 'safe')}
                   </span>
                 </div>
