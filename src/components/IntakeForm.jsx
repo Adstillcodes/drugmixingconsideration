@@ -524,6 +524,9 @@ export default function IntakeForm() {
                         >
                           <div className="flex-1 min-w-0">
                             <span className="font-semibold text-on-surface block truncate">{formatDrugName(drug.name)}</span>
+                            {drug.genericName && drug.genericName.toLowerCase() !== drug.name.toLowerCase() && (
+                              <span className="text-sm text-on-surface/60">Generic: {formatDrugName(drug.genericName)}</span>
+                            )}
                             <span className="text-sm text-on-surface/60">{drug.category}</span>
                           </div>
                           <span className="text-sm text-primary font-medium whitespace-nowrap bg-primary/10 px-2 py-1 rounded-lg">{drug.class}</span>

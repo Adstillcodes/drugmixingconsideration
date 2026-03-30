@@ -1,4 +1,88 @@
 const RXNORM_API = 'https://rxnav.nlm.nih.gov/REST';
+const OPENFDA_DRUG_NAMES_URL = 'https://api.fda.gov/drug/ndc.json';
+const OPENFDA_API_KEY = process.env.OPENFDA_API_KEY;
+
+let cachedDrugs = [];
+let lastFetch = 0;
+const CACHE_DURATION = 5 * 60 * 1000;
+
+function categorizeDrug(item) {
+  const indications = item.indications_and_usage?.[0] || '';
+  const pharmacologic = item.pharmacologic_class?.[0] || '';
+
+  if (indications.includes('diabetes') || pharmacologic.includes('Biguanide')) {
+    return 'Antidiabetic';
+  }
+  if (indications.includes('hypertens') || pharmacologic.includes('ACE') || pharmacologic.includes('Calcium Channel')) {
+    return 'Antihypertensive';
+  }
+  if (indications.includes('cholesterol') || pharmacologic.includes('Statin')) {
+    return 'Cholesterol';
+  }
+  if (indications.includes('depress') || pharmacologic.includes('SSRI') || pharmacologic.includes('SNRI')) {
+    return 'Antidepressant';
+  }
+  if (indications.includes('anxiety') || pharmacologic.includes('Benzodiazepine')) {
+    return 'Anxiolytic';
+  }
+  if (indications.includes('pain') || pharmacologic.includes('Opioid')) {
+    return 'Analgesic';
+  }
+  if (indications.includes('bacterial') || pharmacologic.includes('Antibiotic')) {
+    return 'Antibiotic';
+  }
+
+  return item.product_type?.[0] || 'Medication';
+}
+
+async function fetchFromOpenFDA(query) {
+  const now = Date.now();
+
+  if (cachedDrugs.length > 0 && (now - lastFetch) < CACHE_DURATION) {
+    const queryLower = query.toLowerCase();
+    return cachedDrugs
+      .filter((drug) =>
+        drug.name.toLowerCase().includes(queryLower) ||
+        drug.brandName?.toLowerCase().includes(queryLower) ||
+        drug.genericName?.toLowerCase().includes(queryLower)
+      )
+      .slice(0, 20);
+  }
+
+  try {
+    const response = await fetch(
+      `${OPENFDA_DRUG_NAMES_URL}?search=brand_name:${encodeURIComponent(query)}*&limit=50&api_key=${OPENFDA_API_KEY}`
+    );
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+
+    if (data.results && data.results.length > 0) {
+      const drugs = data.results
+        .filter((item) => item.brand_name && item.generic_name)
+        .map((item) => ({
+          name: item.brand_name?.[0] || item.generic_name?.[0] || '',
+          genericName: item.generic_name?.[0] || '',
+          category: categorizeDrug(item),
+          class: item.product_type?.[0] || 'Unknown',
+          dosage: 'See prescription',
+        }))
+        .filter((drug) => drug.name && drug.name.length > 0);
+
+      cachedDrugs = drugs;
+      lastFetch = now;
+
+      return drugs;
+    }
+
+    return [];
+  } catch {
+    return [];
+  }
+}
 
 function convertToINR(usdPrice) {
   if (!usdPrice) return null;
@@ -211,15 +295,7 @@ export async function searchDrugs(req, res) {
       brandCost: convertToINR(drug.brandCost)
     }));
 
-    if (localMatches.length >= 5) {
-      return res.json({
-        success: true,
-        drugs: localMatches,
-        source: 'local',
-      });
-    }
-
-    const apiMatches = await searchRxNorm(searchTerm);
+    const apiMatches = await fetchFromOpenFDA(searchTerm);
 
     const combined = [...localMatches];
     const seenNames = new Set(localMatches.map(d => d.name.toLowerCase()));
@@ -234,7 +310,7 @@ export async function searchDrugs(req, res) {
     res.json({
       success: true,
       drugs: combined.slice(0, limit),
-      source: combined.length > localMatches.length ? 'rxnorm+local' : 'local',
+      source: combined.length > localMatches.length ? 'openfda+local' : 'local',
     });
   } catch (error) {
     console.error('Drug search error:', error);

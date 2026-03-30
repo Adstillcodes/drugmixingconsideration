@@ -1,5 +1,13 @@
-const OPENFDA_API_URL = 'https://api.fda.gov/drug/label.json';
+import express from 'express';
+
+const router = express.Router();
+
 const OPENFDA_DRUG_NAMES_URL = 'https://api.fda.gov/drug/ndc.json';
+const OPENFDA_API_KEY = process.env.OPENFDA_API_KEY;
+
+let cachedDrugs = [];
+let lastFetch = 0;
+const CACHE_DURATION = 5 * 60 * 1000;
 
 const LOCAL_DRUG_DATABASE = [
   { name: 'Metformin', category: 'Antidiabetic', class: 'Biguanide' },
@@ -116,40 +124,33 @@ const LOCAL_DRUG_DATABASE = [
   { name: 'Amiodarone', category: 'Cardiac', class: 'Antiarrhythmic' },
 ];
 
-let cachedDrugs = [];
-let lastFetch = 0;
-const CACHE_DURATION = 5 * 60 * 1000;
+function categorizeDrug(item) {
+  const indications = item.indications_and_usage?.[0] || '';
+  const pharmacologic = item.pharmacologic_class?.[0] || '';
 
-export async function searchDrugs(query, limit = 20) {
-  if (!query || query.length < 2) {
-    return LOCAL_DRUG_DATABASE.slice(0, limit);
+  if (indications.includes('diabetes') || pharmacologic.includes('Biguanide')) {
+    return 'Antidiabetic';
+  }
+  if (indications.includes('hypertens') || pharmacologic.includes('ACE') || pharmacologic.includes('Calcium Channel')) {
+    return 'Antihypertensive';
+  }
+  if (indications.includes('cholesterol') || pharmacologic.includes('Statin')) {
+    return 'Cholesterol';
+  }
+  if (indications.includes('depress') || pharmacologic.includes('SSRI') || pharmacologic.includes('SNRI')) {
+    return 'Antidepressant';
+  }
+  if (indications.includes('anxiety') || pharmacologic.includes('Benzodiazepine')) {
+    return 'Anxiolytic';
+  }
+  if (indications.includes('pain') || pharmacologic.includes('Opioid')) {
+    return 'Analgesic';
+  }
+  if (indications.includes('bacterial') || pharmacologic.includes('Antibiotic')) {
+    return 'Antibiotic';
   }
 
-  const queryLower = query.toLowerCase();
-
-  const localMatches = LOCAL_DRUG_DATABASE.filter(
-    (drug) =>
-      drug.name.toLowerCase().includes(queryLower) ||
-      drug.category.toLowerCase().includes(queryLower) ||
-      drug.class.toLowerCase().includes(queryLower)
-  ).slice(0, limit);
-
-  try {
-    const apiResults = await fetchFromOpenFDA(query);
-    const combinedResults = [...localMatches];
-    const seen = new Set(combinedResults.map(d => d.name.toLowerCase()));
-
-    apiResults.forEach((drug) => {
-      if (!seen.has(drug.name.toLowerCase())) {
-        combinedResults.push(drug);
-        seen.add(drug.name.toLowerCase());
-      }
-    });
-
-    return combinedResults.slice(0, limit);
-  } catch {
-    return localMatches;
-  }
+  return item.product_type?.[0] || 'Medication';
 }
 
 async function fetchFromOpenFDA(query) {
@@ -201,51 +202,58 @@ async function fetchFromOpenFDA(query) {
   }
 }
 
-function categorizeDrug(item) {
-  const indications = item.indications_and_usage?.[0] || '';
-  const pharmacologic = item.pharmacologic_class?.[0] || '';
+export async function searchDrugs(req, res) {
+  const { query, limit = 20 } = req.query;
 
-  if (indications.includes('diabetes') || pharmacologic.includes('Biguanide')) {
-    return 'Antidiabetic';
-  }
-  if (indications.includes('hypertens') || pharmacologic.includes('ACE') || pharmacologic.includes('Calcium Channel')) {
-    return 'Antihypertensive';
-  }
-  if (indications.includes('cholesterol') || pharmacologic.includes('Statin')) {
-    return 'Cholesterol';
-  }
-  if (indications.includes('depress') || pharmacologic.includes('SSRI') || pharmacologic.includes('SNRI')) {
-    return 'Antidepressant';
-  }
-  if (indications.includes('anxiety') || pharmacologic.includes('Benzodiazepine')) {
-    return 'Anxiolytic';
-  }
-  if (indications.includes('pain') || pharmacologic.includes('Opioid')) {
-    return 'Analgesic';
-  }
-  if (indications.includes('bacterial') || pharmacologic.includes('Antibiotic')) {
-    return 'Antibiotic';
+  if (!query || query.length < 2) {
+    return res.json({ drugs: LOCAL_DRUG_DATABASE.slice(0, Number(limit)) });
   }
 
-  return item.product_type?.[0] || 'Medication';
+  const queryLower = query.toLowerCase();
+
+  const localMatches = LOCAL_DRUG_DATABASE.filter(
+    (drug) =>
+      drug.name.toLowerCase().includes(queryLower) ||
+      drug.category.toLowerCase().includes(queryLower) ||
+      drug.class.toLowerCase().includes(queryLower)
+  ).slice(0, Number(limit));
+
+  try {
+    const apiResults = await fetchFromOpenFDA(query);
+    const combinedResults = [...localMatches];
+    const seen = new Set(localMatches.map(d => d.name.toLowerCase()));
+
+    apiResults.forEach((drug) => {
+      if (!seen.has(drug.name.toLowerCase())) {
+        combinedResults.push(drug);
+        seen.add(drug.name.toLowerCase());
+      }
+    });
+
+    res.json({ drugs: combinedResults.slice(0, Number(limit)) });
+  } catch (error) {
+    res.json({ drugs: localMatches });
+  }
 }
 
-export async function getDrugInfo(drugName) {
+export async function getDrugInfo(req, res) {
+  const { name } = req.query;
+
   const localDrug = LOCAL_DRUG_DATABASE.find(
-    (d) => d.name.toLowerCase() === drugName.toLowerCase()
+    (d) => d.name.toLowerCase() === name?.toLowerCase()
   );
 
   if (localDrug) {
-    return {
+    return res.json({
       ...localDrug,
       dosage: localDrug.dosage || 'Varies',
       source: 'local',
-    };
+    });
   }
 
   try {
     const response = await fetch(
-      `${OPENFDA_DRUG_NAMES_URL}?search=brand_name:${encodeURIComponent(drugName)}&limit=1&api_key=${OPENFDA_API_KEY}`
+      `${OPENFDA_DRUG_NAMES_URL}?search=brand_name:${encodeURIComponent(name)}&limit=1&api_key=${OPENFDA_API_KEY}`
     );
 
     if (!response.ok) {
@@ -256,34 +264,29 @@ export async function getDrugInfo(drugName) {
 
     if (data.results && data.results.length > 0) {
       const item = data.results[0];
-      return {
-        name: item.brand_name?.[0] || drugName,
+      return res.json({
+        name: item.brand_name?.[0] || name,
         genericName: item.generic_name?.[0] || '',
         category: categorizeDrug(item),
         class: item.pharmacologic_class?.[0] || 'Unknown',
         dosage: 'See prescription',
         source: 'api',
-      };
+      });
     }
   } catch (error) {
     console.warn('Drug info fetch failed, using basic info:', error);
   }
 
-  return {
-    name: drugName,
+  res.json({
+    name,
     category: 'Unknown',
     class: 'Unknown',
     dosage: 'See prescription',
     source: 'unknown',
-  };
+  });
 }
 
-export function getLocalDrugDatabase() {
-  return [...LOCAL_DRUG_DATABASE];
-}
+router.get('/search', searchDrugs);
+router.get('/info', getDrugInfo);
 
-export function getDrugByName(name) {
-  return LOCAL_DRUG_DATABASE.find(
-    (d) => d.name.toLowerCase() === name.toLowerCase()
-  );
-}
+export default router;
