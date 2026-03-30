@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Humane Care | Your Gentle Intake</title>
+<!-- Google Fonts: Lexend -->
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary-dim": "#8a3400",
+              "on-tertiary": "#fff1df",
+              "surface-container-lowest": "#ffffff",
+              "on-tertiary-fixed": "#503a11",
+              "secondary-fixed-dim": "#ffb28f",
+              "surface-bright": "#fff4f2",
+              "tertiary-fixed": "#fedba3",
+              "on-error": "#ffefec",
+              "surface-tint": "#904800",
+              "on-tertiary-container": "#644c21",
+              "secondary": "#9e3d00",
+              "primary": "#904800",
+              "on-primary-container": "#421e00",
+              "on-tertiary-fixed-variant": "#6f562a",
+              "surface-dim": "#fbc9c0",
+              "on-surface-variant": "#715550",
+              "on-secondary-container": "#7d2f00",
+              "outline-variant": "#c8a59f",
+              "on-secondary-fixed-variant": "#8c3500",
+              "inverse-on-surface": "#b7958f",
+              "surface-container-highest": "#ffd3cb",
+              "tertiary-fixed-dim": "#efcd96",
+              "outline": "#8e706a",
+              "surface-variant": "#ffd3cb",
+              "tertiary": "#71572c",
+              "inverse-surface": "#1b0906",
+              "on-primary-fixed-variant": "#502500",
+              "secondary-fixed": "#ffc5ac",
+              "surface-container": "#ffe2dd",
+              "inverse-primary": "#f68a2f",
+              "on-background": "#402925",
+              "surface-container-low": "#ffedea",
+              "error": "#b02500",
+              "on-error-container": "#520c00",
+              "primary-fixed": "#f68a2f",
+              "primary-dim": "#7e3e00",
+              "on-surface": "#402925",
+              "tertiary-container": "#fedba3",
+              "surface": "#fff4f2",
+              "secondary-container": "#ffc5ac",
+              "surface-container-high": "#ffdad4",
+              "on-primary-fixed": "#0f0400",
+              "on-secondary": "#fff0ea",
+              "error-dim": "#b92902",
+              "primary-container": "#f68a2f",
+              "background": "#fff4f2",
+              "tertiary-dim": "#644c21",
+              "on-primary": "#fff0e8",
+              "error-container": "#f95630",
+              "on-secondary-fixed": "#5e2100",
+              "primary-fixed-dim": "#e57d21"
+            },
+            fontFamily: {
+              "headline": ["Lexend"],
+              "body": ["Lexend"],
+              "label": ["Lexend"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        body {
+            background-color: #fff4f2; /* Shared Component surface */
+            color: #402925;
+            -webkit-font-smoothing: antialiased;
+        }
+        .grainy-bg {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+        }
+    </style>
+<script>
+  const brandToGeneric = {
+    'multivitamin': 'Essential Multivitamins',
+    'vitamin d3': 'Cholecalciferol (Vitamin D3) 60000 IU',
+    'telma 40': 'Telmisartan 40mg',
+    'amlokind 5': 'Amlodipine 5mg',
+    'glycomet 500': 'Metformin 500mg',
+    'janumet 50/500': 'Sitagliptin 50mg + Metformin 500mg',
+    'galvus met 50/500': 'Vildagliptin 50mg + Metformin 500mg',
+    'gemer 2': 'Glimepiride 2mg + Metformin 500mg',
+    'zyloric 100': 'Allopurinol 100mg',
+    'arkamin': 'Clonidine 100mcg',
+    'lasix 40': 'Furosemide 40mg',
+    'aldactone 25': 'Spironolactone 25mg',
+    'ecosprin av 75/20': 'Aspirin 75mg + Atorvastatin 20mg',
+    'rosuvas 10': 'Rosuvastatin 10mg',
+    'lipivas 20': 'Atorvastatin 20mg',
+    'clopilet 75': 'Clopidogrel 75mg',
+    'clexane 40': 'Enoxaparin 40mg',
+    'augmentin 625': 'Amoxicillin 500mg + Clavulanic Acid 125mg',
+    'taxim o 200': 'Cefixime 200mg',
+    'monocef 1g': 'Ceftriaxone 1g',
+    'ciplox 500': 'Ciprofloxacin 500mg',
+    'norflox 400': 'Norfloxacin 400mg',
+    'zenflox 200': 'Ofloxacin 200mg',
+    'flagyl 400': 'Metronidazole 400mg',
+    'vizylac': 'Lactic Acid Bacillus',
+    'enterogermina': 'Bacillus clausii',
+    'sporlac': 'Lactic Acid Bacillus',
+    'omez 20': 'Omeprazole 20mg',
+    'pantocid 40': 'Pantoprazole 40mg',
+    'rabium 20': 'Rabeprazole 20mg',
+    'lan 30': 'Lansoprazole 30mg',
+    'sucrafil': 'Sucralfate'
+  };
+
+  async function analyzeMedicines() {
+    const statusEl = document.getElementById('mapping-status');
+    const chips = document.querySelectorAll('.med-chip');
+    const continueBtn = document.getElementById('continue-btn');
+
+    statusEl.classList.remove('hidden');
+    statusEl.classList.add('animate-pulse');
+
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    chips.forEach((chip, index) => {
+      setTimeout(() => {
+        const brandText = chip.dataset.brand.toLowerCase().trim();
+        const genericName = brandToGeneric[brandText] || chip.dataset.brand;
+        
+        chip.style.opacity = '0';
+        chip.style.transition = 'opacity 150ms ease-in-out';
+        
+        setTimeout(() => {
+          const textNode = chip.querySelector('.chip-text');
+          if (textNode) textNode.textContent = genericName;
+          chip.style.opacity = '1';
+        }, 150);
+      }, index * 100);
+    });
+
+    setTimeout(() => {
+      statusEl.textContent = 'Medicines resolved.';
+      statusEl.classList.remove('animate-pulse');
+      statusEl.classList.add('text-primary');
+      continueBtn.disabled = false;
+    }, (chips.length * 100) + 300);
+  }
+</script><style>
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .animate-in { animation: fadeIn 0.3s ease-out; }
+  .zoom-in { animation: zoomIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+</style></head>
+<body class="font-body selection:bg-primary-container selection:text-on-primary-container">
+<div class="grainy-bg"></div>
+<!-- SideNavBar (Desktop Only) -->
+<aside class="hidden md:flex fixed left-0 top-0 h-full flex-col py-8 space-y-4 bg-[#fff4f2] dark:bg-stone-950 font-lexend text-[#402925] h-screen rounded-r-[3rem] w-72 z-40 shadow-none">
+<div class="px-8 mb-8">
+<h1 class="text-xl font-bold text-[#904800] tracking-tight">Living Sanctuary</h1>
+<p class="text-xs text-[#71572c] opacity-80">Your gentle companion</p>
+</div>
+<nav class="flex-1 space-y-1">
+<div class="flex items-center gap-4 text-[#71572c] px-6 py-4 mx-2 opacity-70 hover:opacity-100 hover:bg-[#ffd3cb] rounded-full transition-all duration-400 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+<span class="font-medium">Dashboard</span>
+</div>
+<div class="flex items-center gap-4 bg-[#ffe2dd] text-[#904800] rounded-full px-6 py-4 mx-2 font-semibold shadow-sm translate-x-1 duration-400 ease-out">
+<span class="material-symbols-outlined" data-icon="analytics" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<span>Health Log</span>
+</div>
+<div class="flex items-center gap-4 text-[#71572c] px-6 py-4 mx-2 opacity-70 hover:opacity-100 hover:bg-[#ffd3cb] rounded-full transition-all duration-400 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="diversity_1">diversity_1</span>
+<span>Care Team</span>
+</div>
+<div class="flex items-center gap-4 text-[#71572c] px-6 py-4 mx-2 opacity-70 hover:opacity-100 hover:bg-[#ffd3cb] rounded-full transition-all duration-400 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="medication">medication</span>
+<span>Prescriptions</span>
+</div>
+<div class="flex items-center gap-4 text-[#71572c] px-6 py-4 mx-2 opacity-70 hover:opacity-100 hover:bg-[#ffd3cb] rounded-full transition-all duration-400 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="spa">spa</span>
+<span>Wellness Guide</span>
+</div>
+</nav>
+<div class="px-4 pt-4 mt-auto border-t border-outline-variant/10">
+<div class="flex items-center gap-4 text-[#71572c] px-6 py-3 opacity-70 hover:opacity-100 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="contact_support">contact_support</span>
+<span class="text-sm">Personal Help</span>
+</div>
+<div class="flex items-center gap-4 text-[#71572c] px-6 py-3 opacity-70 hover:opacity-100 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="forum">forum</span>
+<span class="text-sm">Live Chat</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Shell -->
+<main class="md:pl-72 min-h-screen">
+<!-- TopAppBar -->
+<header class="bg-[#fff4f2] text-[#402925] font-lexend tracking-wide leading-relaxed shadow-[0px_12px_32px_rgba(64,41,37,0.06)] sticky top-0 z-30">
+<div class="flex justify-between items-center w-full px-8 py-4 max-w-screen-2xl mx-auto">
+<div class="md:hidden text-2xl font-bold tracking-tight text-[#402925]">Humane Care</div>
+<nav class="hidden md:flex items-center gap-10">
+<a class="text-[#71572c] font-medium hover:bg-[#ffe2dd] transition-colors duration-300 px-4 py-1 rounded-full" href="#">My Journey</a>
+<a class="text-[#904800] font-bold border-b-4 border-[#904800] pb-1" href="#">Vitality</a>
+<a class="text-[#71572c] font-medium hover:bg-[#ffe2dd] transition-colors duration-300 px-4 py-1 rounded-full" href="#">Reports</a>
+</nav>
+<div class="flex items-center gap-6">
+<button class="bg-[#904800] text-on-primary px-8 py-2.5 rounded-full font-semibold hover:bg-primary-dim transition-all shadow-md active:scale-95 duration-400 ease-in-out">
+                        Book Session
+                    </button>
+<div class="w-10 h-10 rounded-full bg-surface-container overflow-hidden border-2 border-primary-container">
+<img alt="Profile" class="w-full h-full object-cover" data-alt="close-up portrait of a middle-aged woman with a warm, gentle smile and soft natural lighting in a home setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7paUNXxY7fdJ9o7CBQuT55CjcpIMOwDHMM0fFjGDzVDpJmKBDLCeTNvdI-4iKy3cLtxNQm_D62lFiEch5JLlXxXXRUeEAxE_IIDJDVKTJHXt0gMQ5eKrtowHzpatr_zC1cNhYzy0gLZjlup5_NZWev_whdiBvJCUZybQIBC9TqHbc2vCAVm_WgAx-P2o2YYEtz9oPVdAEgAQJVmf2QnLatCsgEHvHFZ_rv_736dEHV0FSzmiAxkPtfnWjoMp7cWpoTlECK5Nv57BS"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Intake Form Content -->
+<div class="max-w-4xl mx-auto px-6 py-16 md:py-24">
+<!-- Hero Section -->
+<section class="mb-16 text-center space-y-6">
+<div class="inline-flex items-center gap-2 px-4 py-2 bg-primary-container/20 text-primary rounded-full text-sm font-medium">
+<span class="material-symbols-outlined text-sm" data-icon="potted_plant">potted_plant</span>
+                    Intake: Step 1 of 3
+                </div>
+<h2 class="text-5xl md:text-6xl font-headline font-extrabold text-on-background leading-tight tracking-tight">
+                    Let's keep your medications <br/> <span class="text-primary italic">in harmony.</span>
+</h2>
+<p class="text-lg text-on-surface-variant max-w-xl mx-auto leading-relaxed">
+                    Tell us about your current regimen. This helps our team ensure everything you take works beautifully together.
+                </p>
+</section>
+<!-- Trust Banner -->
+<div class="bg-surface-container-low rounded-lg p-6 mb-12 flex items-start gap-4 shadow-sm">
+<div class="bg-primary/10 p-3 rounded-full text-primary">
+<span class="material-symbols-outlined" data-icon="verified_user">verified_user</span>
+</div>
+<div>
+<h4 class="font-semibold text-on-background">Your safety is why we ask this</h4>
+<p class="text-sm text-on-surface-variant leading-relaxed">We cross-reference your supplements and prescriptions to prevent gentle imbalances in your wellness journey. Your data remains completely private.</p>
+</div>
+</div>
+<!-- Main Form Card -->
+<div class="space-y-12">
+<!-- Section 1: Current Regimen -->
+<div class="space-y-8">
+<div class="flex items-center gap-4">
+<span class="w-10 h-10 flex items-center justify-center rounded-full bg-primary text-on-primary font-bold">1</span>
+<h3 class="text-2xl font-semibold text-on-background">Morning Essentials</h3>
+</div>
+<div class="grid grid-cols-1 gap-6">
+<div class="group">
+<label class="block text-sm font-medium text-on-surface-variant mb-3 ml-1">What medications do you take when you wake up?</label>
+<input class="w-full bg-surface-container-low border-none focus:bg-surface-container-highest focus:ring-0 rounded-md py-4 px-6 text-on-background placeholder:text-outline transition-all duration-400" placeholder="e.g. Multivitamin, Lisinopril..." type="text"/>
+</div>
+<!-- Pill Chips Interaction -->
+<div class="flex flex-wrap gap-3"><span class="med-chip inline-flex items-center gap-2 bg-surface-container-highest text-primary font-medium py-2.5 px-6 rounded-full shadow-sm hover:bg-primary-container hover:text-on-primary-container transition-all cursor-pointer" data-brand="Multivitamin">
+<span class="chip-text">Multivitamin</span> <span class="material-symbols-outlined text-sm" data-icon="close">close</span>
+</span>
+<span class="med-chip inline-flex items-center gap-2 bg-surface-container-highest text-primary font-medium py-2.5 px-6 rounded-full shadow-sm hover:bg-primary-container hover:text-on-primary-container transition-all cursor-pointer" data-brand="Vitamin D3">
+<span class="chip-text">Vitamin D3</span> <span class="material-symbols-outlined text-sm" data-icon="close">close</span>
+</span>
+<button class="inline-flex items-center gap-2 bg-primary/10 text-primary border-2 border-primary/20 hover:bg-primary/20 py-2.5 px-6 rounded-full transition-all font-semibold" onclick="analyzeMedicines()">
+<span class="material-symbols-outlined text-sm" data-icon="auto_awesome">auto_awesome</span> Analyze Brands
+</button>
+<button class="inline-flex items-center gap-2 border-2 border-dashed border-outline-variant text-outline hover:border-primary hover:text-primary py-2.5 px-6 rounded-full transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span> Add Another
+</button></div><div class="hidden text-sm text-on-surface-variant italic mt-4 ml-1 flex items-center gap-2" id="mapping-status">
+<span class="material-symbols-outlined text-xs">sync</span> Resolving medicines...
+</div>
+</div>
+</div>
+<!-- Section 2: Frequency Bloom -->
+<div class="space-y-8 pt-8">
+<div class="flex items-center gap-4">
+<span class="w-10 h-10 flex items-center justify-center rounded-full bg-primary text-on-primary font-bold">2</span>
+<h3 class="text-2xl font-semibold text-on-background">Rhythm &amp; Routine</h3>
+</div>
+<div class="bg-surface-container rounded-lg p-10 relative overflow-hidden">
+<!-- Progress Bloom Background (SVG) -->
+<div class="absolute -right-20 -top-20 opacity-10">
+<svg fill="none" height="400" viewbox="0 0 100 100" width="400">
+<path d="M50 10C60 10 70 15 75 25C80 35 80 45 75 55C70 65 60 70 50 70C40 70 30 65 25 55C20 45 20 35 25 25C30 15 40 10 50 10Z" stroke="#71572c" stroke-width="0.5"></path>
+<path d="M50 5C65 5 78 12 85 25C92 38 92 52 85 65C78 78 65 85 50 85C35 85 22 78 15 65C8 52 8 38 15 25C22 12 35 5 50 5Z" stroke="#71572c" stroke-dasharray="2 2" stroke-width="0.3"></path>
+</svg>
+</div>
+<p class="text-on-surface-variant mb-8 leading-relaxed">How often do you feel you miss a dose during a busy week?</p>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 relative z-10">
+<label class="cursor-pointer group">
+<input class="hidden peer" name="frequency" type="radio"/>
+<div class="p-6 bg-surface-container-low rounded-xl text-center border-2 border-transparent peer-checked:border-primary peer-checked:bg-white transition-all group-hover:scale-105 duration-300">
+<span class="material-symbols-outlined text-4xl mb-4 text-tertiary" data-icon="sentiment_very_satisfied">sentiment_very_satisfied</span>
+<p class="font-semibold">Rarely</p>
+<p class="text-xs text-outline mt-1">Once a month or less</p>
+</div>
+</label>
+<label class="cursor-pointer group">
+<input checked="" class="hidden peer" name="frequency" type="radio"/>
+<div class="p-6 bg-surface-container-low rounded-xl text-center border-2 border-transparent peer-checked:border-primary peer-checked:bg-white transition-all group-hover:scale-105 duration-300 shadow-sm">
+<span class="material-symbols-outlined text-4xl mb-4 text-tertiary" data-icon="sentiment_neutral">sentiment_neutral</span>
+<p class="font-semibold">Sometimes</p>
+<p class="text-xs text-outline mt-1">1-2 times a week</p>
+</div>
+</label>
+<label class="cursor-pointer group">
+<input class="hidden peer" name="frequency" type="radio"/>
+<div class="p-6 bg-surface-container-low rounded-xl text-center border-2 border-transparent peer-checked:border-primary peer-checked:bg-white transition-all group-hover:scale-105 duration-300">
+<span class="material-symbols-outlined text-4xl mb-4 text-tertiary" data-icon="sentiment_dissatisfied">sentiment_dissatisfied</span>
+<p class="font-semibold">Often</p>
+<p class="text-xs text-outline mt-1">Most days of the week</p>
+</div>
+</label>
+</div>
+</div>
+</div>
+<!-- Section 3: Notes -->
+<div class="space-y-8 pt-8">
+<div class="flex items-center gap-4">
+<span class="w-10 h-10 flex items-center justify-center rounded-full bg-primary text-on-primary font-bold">3</span>
+<h3 class="text-2xl font-semibold text-on-background">Anything else, friend?</h3>
+</div>
+<div class="group">
+<label class="block text-sm font-medium text-on-surface-variant mb-3 ml-1">Feel free to share any sensitivities or specific concerns.</label>
+<textarea class="w-full bg-surface-container-low border-none focus:bg-surface-container-highest focus:ring-0 rounded-md py-4 px-6 text-on-background placeholder:text-outline transition-all duration-400 resize-none" placeholder="Tell us a bit about how you're feeling..." rows="4"></textarea>
+</div>
+</div>
+<!-- CTA Footer -->
+<div class="pt-12 flex flex-col md:flex-row items-center justify-between gap-8 border-t border-outline-variant/20">
+<button class="text-on-surface-variant font-medium hover:text-primary transition-colors flex items-center gap-2 group">
+<span class="material-symbols-outlined transition-transform group-hover:-translate-x-1" data-icon="arrow_back">arrow_back</span>
+                        Go back to Dashboard
+                    </button>
+<button class="w-full md:w-auto bg-[#904800] text-on-primary px-12 py-5 rounded-full font-bold text-lg shadow-xl hover:scale-105 transition-all duration-400 active:scale-95" id="continue-btn">
+                        Continue to Health Log
+                    </button>
+</div>
+</div>
+</div>
+<!-- Progress Footer (Visual Decoration) -->
+<footer class="max-w-4xl mx-auto px-6 pb-12">
+<div class="flex justify-between items-center text-xs text-outline font-medium tracking-widest uppercase mb-4">
+<span>Intake Form</span>
+<span>33% Complete</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full transition-all duration-1000" style="width: 33%;"></div>
+</div>
+</footer>
+</main>
+<!-- Bottom Navigation (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-[#fff4f2] p-4 flex justify-around items-center z-50 shadow-[0px_-4px_24px_rgba(64,41,37,0.08)]">
+<div class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined" data-icon="grid_view" style="font-variation-settings: 'FILL' 1;">grid_view</span>
+<span class="text-[10px] font-bold">Home</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-[#71572c] opacity-60">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="text-[10px]">Log</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-[#71572c] opacity-60">
+<span class="material-symbols-outlined" data-icon="medication">medication</span>
+<span class="text-[10px]">Meds</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-[#71572c] opacity-60">
+<span class="material-symbols-outlined" data-icon="spa">spa</span>
+<span class="text-[10px]">Guide</span>
+</div>
+</nav>
+<!-- Disclaimer Modal -->
+<div class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" id="disclaimer-modal">
+<!-- Semi-transparent Backdrop -->
+<div class="absolute inset-0 bg-[#221810]/60 backdrop-blur-sm"></div>
+<!-- Modal Content -->
+<div class="relative bg-white dark:bg-stone-900 w-full max-w-lg rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+<div class="p-8 text-center">
+<div class="w-16 h-16 bg-[#F59E0B]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+<span class="material-symbols-outlined text-[#F59E0B] text-3xl" data-icon="info">info</span>
+</div>
+<h3 class="text-2xl font-bold text-[#221810] dark:text-white mb-4 font-display">Medical Disclaimer</h3>
+<p class="text-[#715550] dark:text-stone-400 leading-relaxed mb-8">
+        This tool analyzes drug interactions for informational purposes only. It does not replace medical advice. Always consult your doctor or pharmacist before changing your medication regimen.
+      </p>
+<button class="w-full bg-[#F59E0B] hover:bg-[#D97706] text-white font-bold py-4 px-8 rounded-full transition-all duration-300 shadow-lg hover:shadow-[#F59E0B]/20 transform hover:-translate-y-0.5 active:scale-95" onclick="document.getElementById('disclaimer-modal').remove()">
+        I understand
+      </button>
+</div>
+</div>
+</div></body></html>

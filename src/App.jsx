@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import TopNav from './components/TopNav';
 import SideNav from './components/SideNav';
@@ -9,6 +10,7 @@ import InteractionDeepDive from './components/InteractionDeepDive';
 import Recommendations from './components/Recommendations';
 import AlternativesDashboard from './components/AlternativesDashboard';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import Disclaimer from './components/Disclaimer';
 
 function AppContent() {
   const { currentScreen } = useApp();
@@ -47,8 +49,11 @@ function AppContent() {
 }
 
 function App() {
+  const [showDisclaimer, setShowDisclaimer] = useState(true);
+
   return (
     <AppProvider>
+      {showDisclaimer && <Disclaimer onAccept={() => setShowDisclaimer(false)} />}
       <AppContent />
     </AppProvider>
   );
