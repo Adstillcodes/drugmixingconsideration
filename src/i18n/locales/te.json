@@ -70,9 +70,8 @@
       "aiExtractedSubtitle": "These medications were automatically extracted from your prescription and added to your analysis."
     },
     "submit": {
-      "runAnalysis": "Run Analysis",
-      "uploadToContinue": "Upload Prescription to Continue",
-      "privacyNote": "Your medical data is encrypted and HIPAA compliant."
+      "runAnalysis": "Run Friendly Analysis",
+      "uploadToContinue": "Upload Prescription to Continue"
     },
     "validation": {
       "minMedications": "Please add at least 2 medications to analyze interactions.",
@@ -239,8 +238,6 @@
       "download": "Download Report"
     },
     "trust": {
-      "hipaa": "HIPAA Compliant",
-      "hipaaSub": "Your data is secure",
       "fda": "FDA Verified",
       "fdaSub": "Based on drug labels"
     },
