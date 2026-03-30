@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { downloadReport, printReport } from '../services/reportGenerator';
@@ -5,6 +6,31 @@ import { downloadReport, printReport } from '../services/reportGenerator';
 export default function InteractionDeepDive() {
   const { t } = useTranslation();
   const { selectedInteraction, setSelectedInteraction, setCurrentScreen, analysisResults, aiAnalysis, userData } = useApp();
+  const [findingPharmacy, setFindingPharmacy] = useState(false);
+
+  const handleFindPharmacy = () => {
+    setFindingPharmacy(true);
+    
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const mapsUrl = `https://www.google.com/maps/search/pharmacy/@${latitude},${longitude},15z`;
+          window.open(mapsUrl, '_blank');
+          setFindingPharmacy(false);
+        },
+        () => {
+          const fallbackUrl = 'https://www.google.com/maps/search/pharmacy+near+me';
+          window.open(fallbackUrl, '_blank');
+          setFindingPharmacy(false);
+        }
+      );
+    } else {
+      const fallbackUrl = 'https://www.google.com/maps/search/pharmacy+near+me';
+      window.open(fallbackUrl, '_blank');
+      setFindingPharmacy(false);
+    }
+  };
 
   const interaction = selectedInteraction;
   const interactions = analysisResults?.interactions || [];
@@ -380,9 +406,13 @@ export default function InteractionDeepDive() {
             <p className="text-white/80 text-xs sm:text-sm mb-4 sm:mb-6 leading-relaxed font-medium">
               {t('deepDive.consultation.subtitle')}
             </p>
-            <button className="w-full bg-white text-primary py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black hover:bg-secondary-container transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 text-sm sm:text-base">
-              <span className="material-symbols-outlined">phone</span>
-              {t('deepDive.consultation.button')}
+            <button 
+              onClick={handleFindPharmacy}
+              disabled={findingPharmacy}
+              className="w-full bg-white text-primary py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black hover:bg-secondary-container transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 text-sm sm:text-base disabled:opacity-70"
+            >
+              <span className="material-symbols-outlined">{findingPharmacy ? 'hourglass_top' : 'phone'}</span>
+              {findingPharmacy ? t('common.loading') : t('deepDive.consultation.button')}
             </button>
           </section>
 
