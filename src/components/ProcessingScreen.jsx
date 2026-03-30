@@ -106,11 +106,6 @@ export default function ProcessingScreen() {
                 </div>
               </div>
             )}
-
-            <div className="mt-6 sm:mt-8 flex items-center justify-center gap-2 text-on-surface/40 text-xs sm:text-sm">
-              <span className="material-symbols-outlined text-primary" data-icon="shield">shield</span>
-              <span>{t('processing.privacyNote')}</span>
-            </div>
           </>
         )}
       </div>
