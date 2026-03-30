@@ -51,7 +51,7 @@ async function fetchFromOpenFDA(query) {
 
   try {
     const response = await fetch(
-      `${OPENFDA_DRUG_NAMES_URL}?search=brand_name:${encodeURIComponent(query)}*&limit=50&api_key=${OPENFDA_API_KEY}`
+      `${OPENFDA_DRUG_NAMES_URL}?search=brand_name:${encodeURIComponent(query)}*+OR+generic_name:${encodeURIComponent(query)}*&limit=50&api_key=${OPENFDA_API_KEY}`
     );
 
     if (!response.ok) {
