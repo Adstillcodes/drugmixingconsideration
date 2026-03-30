@@ -780,10 +780,6 @@ export default function IntakeForm() {
                   ? t('intake.submit.uploadToContinue')
                   : t('intake.submit.runAnalysis')}
               </button>
-              <p className="text-center text-on-surface/40 text-xs sm:text-sm mt-4 sm:mt-6 flex items-center justify-center gap-2">
-                <span className="material-symbols-outlined text-[14px] sm:text-[16px] text-primary" data-icon="lock" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
-                {t('intake.submit.privacyNote')}
-              </p>
             </div>
           </form>
         </div>
