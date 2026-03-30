@@ -1,5 +1,6 @@
 const OPENFDA_API_URL = 'https://api.fda.gov/drug/label.json';
 const OPENFDA_DRUG_NAMES_URL = 'https://api.fda.gov/drug/ndc.json';
+const OPENFDA_API_KEY = 'tb69azTxslp9e0myS739ED5rRylZGmmlOrsKo8cJ';
 
 const LOCAL_DRUG_DATABASE = [
   { name: 'Metformin', category: 'Antidiabetic', class: 'Biguanide' },
@@ -134,17 +135,15 @@ export async function searchDrugs(query, limit = 20) {
       drug.class.toLowerCase().includes(queryLower)
   ).slice(0, limit);
 
-  if (localMatches.length >= 5) {
-    return localMatches;
-  }
-
   try {
     const apiResults = await fetchFromOpenFDA(query);
     const combinedResults = [...localMatches];
+    const seen = new Set(combinedResults.map(d => d.name.toLowerCase()));
 
     apiResults.forEach((drug) => {
-      if (!combinedResults.some((d) => d.name.toLowerCase() === drug.name.toLowerCase())) {
+      if (!seen.has(drug.name.toLowerCase())) {
         combinedResults.push(drug);
+        seen.add(drug.name.toLowerCase());
       }
     });
 
@@ -162,14 +161,15 @@ async function fetchFromOpenFDA(query) {
     return cachedDrugs
       .filter((drug) =>
         drug.name.toLowerCase().includes(queryLower) ||
-        drug.brandName?.toLowerCase().includes(queryLower)
+        drug.brandName?.toLowerCase().includes(queryLower) ||
+        drug.genericName?.toLowerCase().includes(queryLower)
       )
       .slice(0, 20);
   }
 
   try {
     const response = await fetch(
-      `${OPENFDA_DRUG_NAMES_URL}?search=brand_name:${encodeURIComponent(query)}*&limit=50`
+      `${OPENFDA_DRUG_NAMES_URL}?search=brand_name:${encodeURIComponent(query)}*&limit=50&api_key=${OPENFDA_API_KEY}`
     );
 
     if (!response.ok) {
@@ -246,7 +246,7 @@ export async function getDrugInfo(drugName) {
 
   try {
     const response = await fetch(
-      `${OPENFDA_DRUG_NAMES_URL}?search=brand_name:${drugName}&limit=1`
+      `${OPENFDA_DRUG_NAMES_URL}?search=brand_name:${encodeURIComponent(drugName)}&limit=1&api_key=${OPENFDA_API_KEY}`
     );
 
     if (!response.ok) {
