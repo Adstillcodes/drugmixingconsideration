@@ -2,8 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { analyzeInteractions } from './routes/analyze.js';
-import { searchDrugs } from './routes/drugs.js';
+import { searchDrugs as searchDrugsLocal } from './routes/drugs.js';
 import { processOCR } from './routes/ocr.js';
+import { searchDrugs as searchDrugsFDA, getDrugInfo } from './routes/openfda.js';
 
 dotenv.config();
 
@@ -23,7 +24,9 @@ app.get('/api/health', (req, res) => {
 });
 
 app.post('/api/analyze', analyzeInteractions);
-app.get('/api/drugs/search', searchDrugs);
+app.get('/api/drugs/search', searchDrugsLocal);
+app.get('/api/drugs/search-fda', searchDrugsFDA);
+app.get('/api/drugs/info', getDrugInfo);
 app.post('/api/ocr', processOCR);
 
 app.use((err, req, res, next) => {
