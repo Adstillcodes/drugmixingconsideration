@@ -310,68 +310,31 @@
   },
   "privacyPolicy": {
     "title": "Privacy Policy",
-    "lastUpdated": "Last updated: March 28, 2026",
+    "lastUpdated": "Last updated: March 30, 2026",
     "backToHome": "Back to Home",
-    "introduction": {
-      "title": "1. Introduction",
-      "content": "Welcome to Dose-Wise. We respect your privacy and are committed to protecting your personal data. This privacy policy explains how we collect, use, disclose, and safeguard your information when you use our prescription drug interaction analyzer service."
+    "intro": "Drug Conflict Detector is designed with one principle: we don't collect, store, or share any of your data.",
+    "whatWeDontDo": {
+      "title": "What We Don't Do:",
+      "items": [
+        "We don't require accounts, emails, or sign-ups",
+        "We don't store your medical information",
+        "We don't track your usage or collect analytics",
+        "We don't share any data with third parties",
+        "We don't sell your information (because we have no information to sell)"
+      ]
     },
-    "informationWeCollect": {
-      "title": "2. Information We Collect",
-      "personalInfo": {
-        "subtitle": "2.1 Personal Information",
-        "desc": "We may collect the following personal information when you use Dose-Wise:",
-        "items": ["Name and contact information", "Age and gender", "Medical conditions and health information", "List of medications you are taking"]
-      },
-      "prescriptionData": {
-        "subtitle": "2.2 Prescription Data",
-        "desc": "If you upload prescription images or documents, we process these to extract medication information. Uploaded images are processed and not permanently stored on our servers."
-      },
-      "usageData": {
-        "subtitle": "2.3 Usage Data",
-        "desc": "We may collect information about how you access and use our service, including your IP address, browser type, pages visited, and time spent on pages."
-      }
+    "howItWorks": {
+      "title": "How It Works:",
+      "content": "When you use the app, your medication input stays on your device. Analysis runs locally or through temporary, ephemeral processes. Once you close the app, your session data is gone. There is nothing to hack, nothing to leak, nothing to compromise."
     },
-    "howWeUse": {
-      "title": "3. How We Use Your Information",
-      "desc": "We use the collected information for the following purposes:",
-      "items": ["To provide and maintain our drug interaction analysis service", "To analyze prescriptions and extract medication information", "To generate personalized drug interaction reports", "To notify you about changes to our service", "To provide customer support", "To monitor the usage of our service", "To detect, prevent, and address technical issues"]
-    },
-    "dataSecurity": {
-      "title": "4. Data Security",
-      "content": "The security of your data is important to us. We strive to use commercially acceptable means to protect your personal information. However, no method of transmission over the Internet or electronic storage is 100% secure and we cannot guarantee absolute security. All data transmission is encrypted using industry-standard SSL/TLS encryption."
-    },
-    "dataRetention": {
-      "title": "5. Data Retention",
-      "content": "We will retain your personal data only for as long as necessary to fulfill the purposes for which it was collected, including to satisfy any legal, accounting, or reporting requirements. Prescription images are processed in real-time and are not stored on our servers after processing is complete."
-    },
-    "disclosure": {
-      "title": "6. Disclosure of Data",
-      "desc": "We do not sell, trade, or rent your personal identification information to third parties. We may disclose your data in the following situations:",
-      "items": ["To comply with a legal obligation", "To protect and defend the rights or property of Dose-Wise", "To prevent or investigate possible wrongdoing in connection with the service", "To protect the personal safety of users of the service or the public", "To protect against legal liability"]
-    },
-    "thirdParty": {
-      "title": "7. Third-Party Services",
-      "content": "We may employ third-party companies and individuals to facilitate our service, provide service on our behalf, perform service-related services, or assist us in analyzing how our service is used. These third parties have access to your personal data only to perform these tasks on our behalf and are obligated not to disclose or use it for any other purpose."
-    },
+    "noCookies": "No Cookies: We don't use cookies, beacons, or any tracking technology.",
     "yourRights": {
-      "title": "8. Your Rights",
-      "desc": "Depending on your location, you may have certain rights regarding your personal data, including:",
-      "items": ["The right to access the personal data we hold about you", "The right to request correction of inaccurate data", "The right to request deletion of your personal data", "The right to object to or restrict processing of your data", "The right to data portability", "The right to withdraw consent"]
-    },
-    "childrensPrivacy": {
-      "title": "9. Children's Privacy",
-      "content": "Our service is not intended for use by children under the age of 18. We do not knowingly collect personally identifiable information from children under 18. If you are a parent or guardian and you are aware that your child has provided us with personal data, please contact us so that we can take necessary action."
+      "title": "Your Rights:",
+      "content": "You have the right to know what data we collect (none), the right to access it (there's nothing to access), and the right to delete it (there's nothing to delete). We've built this app so these rights are guaranteed by design, not by policy."
     },
     "changes": {
-      "title": "10. Changes to This Privacy Policy",
-      "content": "We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the \"Last updated\" date. You are advised to review this Privacy Policy periodically for any changes."
-    },
-    "contact": {
-      "title": "11. Contact Us",
-      "desc": "If you have any questions about this Privacy Policy, please contact us:",
-      "items": ["Email: privacy@dosewise.com", "Website: www.dosewise.com"]
-    },
-    "footer": "© 2026 Dose-Wise. All rights reserved."
+      "title": "Changes to This Policy:",
+      "content": "If we ever change this policy, we'll update the date here. Our commitment to zero data collection will never change."
+    }
   }
 }
