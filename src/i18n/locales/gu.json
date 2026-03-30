@@ -70,9 +70,8 @@
       "aiExtractedSubtitle": "આ દવાઓ તમારા પ્રિસ્ક્રિપ્શનમાંથી આપમેળે કાઢીને તમારા વિશ્લેષણમાં ઉમેરવામાં આવી છે."
     },
     "submit": {
-      "runAnalysis": "ફ્રેન્ડલી વિશ્લેષણ ચલાવો",
-      "uploadToContinue": "ચાલુ રાખવા માટે પ્રિસ્ક્રિપ્શન અપલોડ કરો",
-      "privacyNote": "તમારો મેડિકલ ડેટા એન્ક્રિપ્ટેડ છે અને HIPAA કમ્પ્લાયન્ટ છે."
+      "runAnalysis": "Friendly Analysis ચલાવો",
+      "uploadToContinue": "ચાલુ રાખવા માટે પ્રિસ્ક્રિપ્શન અપલોડ કરો"
     },
     "validation": {
       "minMedications": "ક્રિયાપ્રતિક્રિયાઓ વિશ્લેષણ કરવા માટે ઓછામાં ઓછી 2 દવાઓ ઉમેરો.",
@@ -239,8 +238,6 @@
       "download": "રિપોર્ટ ડાઉનલોડ કરો"
     },
     "trust": {
-      "hipaa": "HIPAA Compliant",
-      "hipaaSub": "તમારો ડેટા સુરક્ષિત છે",
       "fda": "FDA Verified",
       "fdaSub": "દવાના લેબલ્સ પર આધારિત"
     },

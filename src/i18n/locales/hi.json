@@ -71,8 +71,7 @@
     },
     "submit": {
       "runAnalysis": "Friendly Analysis चलाएं",
-      "uploadToContinue": "जारी रखने के लिए नुस्खा अपलोड करें",
-      "privacyNote": "आपका चिकित्सा डेटा एन्क्रिप्टेड और HIPAA अनुपालक है।"
+      "uploadToContinue": "जारी रखने के लिए नुस्खा अपलोड करें"
     },
     "validation": {
       "minMedications": "कृपया interactions का विश्लेषण करने के लिए कम से कम 2 दवाएं जोड़ें।",
@@ -239,8 +238,6 @@
       "download": "रिपोर्ट डाउनलोड करें"
     },
     "trust": {
-      "hipaa": "HIPAA अनुपालक",
-      "hipaaSub": "आपका डेटा सुरक्षित है",
       "fda": "FDA सत्यापित",
       "fdaSub": "दवा लेबल पर आधारित"
     },

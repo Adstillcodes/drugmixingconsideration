@@ -279,15 +279,6 @@ export default function Recommendations() {
             <div className="relative z-10 space-y-4 sm:space-y-6">
               <div className="flex items-center gap-3 sm:gap-4">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-full flex items-center justify-center">
-                  <span className="material-symbols-outlined text-lg sm:text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>verified_user</span>
-                </div>
-                <div>
-                  <p className="text-[0.65rem] sm:text-[0.75rem] font-bold uppercase tracking-widest opacity-80">{t('recommendations.trust.hipaa')}</p>
-                  <p className="text-xs sm:text-sm font-semibold">{t('recommendations.trust.hipaaSub')}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 sm:gap-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-full flex items-center justify-center">
                   <span className="material-symbols-outlined text-lg sm:text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>medical_information</span>
                 </div>
                 <div>
