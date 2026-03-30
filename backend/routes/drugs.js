@@ -38,6 +38,11 @@ function categorizeDrug(item) {
 async function fetchFromOpenFDA(query) {
   const now = Date.now();
 
+  if (!OPENFDA_API_KEY) {
+    console.warn('OPENFDA_API_KEY not set in environment variables');
+    return [];
+  }
+
   if (cachedDrugs.length > 0 && (now - lastFetch) < CACHE_DURATION) {
     const queryLower = query.toLowerCase();
     return cachedDrugs
@@ -51,7 +56,7 @@ async function fetchFromOpenFDA(query) {
 
   try {
     const response = await fetch(
-      `${OPENFDA_DRUG_NAMES_URL}?search=brand_name:${encodeURIComponent(query)}*&limit=50&api_key=${OPENFDA_API_KEY}`
+      `${OPENFDA_DRUG_NAMES_URL}?search=brand_name:${encodeURIComponent(query)}*+OR+generic_name:${encodeURIComponent(query)}*&limit=50&api_key=${OPENFDA_API_KEY}`
     );
 
     if (!response.ok) {
@@ -268,9 +273,10 @@ export async function searchDrugs(req, res) {
   try {
     const { q, query, limit = 20 } = req.query;
     const searchTerm = q || query || '';
+    const limitNum = parseInt(limit) || 20;
 
     if (!searchTerm || searchTerm.length < 2) {
-      const drugsWithINR = LOCAL_DRUG_DATABASE.slice(0, limit).map(drug => ({
+      const drugsWithINR = LOCAL_DRUG_DATABASE.slice(0, limitNum).map(drug => ({
         ...drug,
         genericCost: convertToINR(drug.genericCost),
         brandCost: convertToINR(drug.brandCost)
@@ -289,13 +295,15 @@ export async function searchDrugs(req, res) {
         drug.name.toLowerCase().includes(queryLower) ||
         drug.category.toLowerCase().includes(queryLower) ||
         drug.class.toLowerCase().includes(queryLower)
-    ).slice(0, limit).map(drug => ({
+    ).slice(0, limitNum).map(drug => ({
       ...drug,
       genericCost: convertToINR(drug.genericCost),
       brandCost: convertToINR(drug.brandCost)
     }));
 
     const apiMatches = await fetchFromOpenFDA(searchTerm);
+    
+    console.log('Search:', searchTerm, '| Local matches:', localMatches.length, '| API matches:', apiMatches.length);
 
     const combined = [...localMatches];
     const seenNames = new Set(localMatches.map(d => d.name.toLowerCase()));
@@ -309,7 +317,7 @@ export async function searchDrugs(req, res) {
 
     res.json({
       success: true,
-      drugs: combined.slice(0, limit),
+      drugs: combined.slice(0, limitNum),
       source: combined.length > localMatches.length ? 'openfda+local' : 'local',
     });
   } catch (error) {
