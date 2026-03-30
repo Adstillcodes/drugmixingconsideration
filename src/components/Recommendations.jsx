@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { downloadReport, printReport } from '../services/reportGenerator';
@@ -5,6 +6,33 @@ import { downloadReport, printReport } from '../services/reportGenerator';
 export default function Recommendations() {
   const { t } = useTranslation();
   const { selectedInteraction, analysisResults, aiAnalysis, userData, setCurrentScreen } = useApp();
+  const [findingPharmacy, setFindingPharmacy] = useState(false);
+
+  const handleFindPharmacy = () => {
+    setFindingPharmacy(true);
+    
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const mapsUrl = `https://www.google.com/maps/search/pharmacy/@${latitude},${longitude},15z`;
+          window.open(mapsUrl, '_blank');
+          setFindingPharmacy(false);
+        },
+        () => {
+          const fallbackUrl = 'https://www.google.com/maps/search/pharmacy+near+me';
+          window.open(fallbackUrl, '_blank');
+          setFindingPharmacy(false);
+        }
+      );
+    } else {
+      const fallbackUrl = 'https://www.google.com/maps/search/pharmacy+near+me';
+      window.open(fallbackUrl, '_blank');
+      setFindingPharmacy(false);
+    }
+  };
+
+  const isUrgent = hasResults && (analysisResults.summary?.riskLevel === 'critical' || analysisResults.summary?.riskLevel === 'high');
 
   const handleDownloadReport = () => {
     downloadReport(analysisResults, aiAnalysis, userData);
@@ -233,6 +261,16 @@ export default function Recommendations() {
               <span className="material-symbols-outlined">download</span>
               {t('recommendations.actions.download')}
             </button>
+            {isUrgent && (
+              <button 
+                onClick={handleFindPharmacy}
+                disabled={findingPharmacy}
+                className="w-full bg-error text-white py-3 sm:py-4 rounded-xl font-bold flex items-center justify-center gap-2 sm:gap-3 hover:opacity-95 transition-all shadow-lg shadow-error/30 cursor-pointer disabled:opacity-70"
+              >
+                <span className="material-symbols-outlined">{findingPharmacy ? 'hourglass_top' : 'local_pharmacy'}</span>
+                {findingPharmacy ? t('common.loading') : t('deepDive.consultation.button')}
+              </button>
+            )}
           </div>
 
 
