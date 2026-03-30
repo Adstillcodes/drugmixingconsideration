@@ -32,6 +32,8 @@ export default function Recommendations() {
     }
   };
 
+  const interaction = selectedInteraction;
+  const hasResults = analysisResults && analysisResults.interactions;
   const isUrgent = hasResults && (analysisResults.summary?.riskLevel === 'critical' || analysisResults.summary?.riskLevel === 'high');
 
   const handleDownloadReport = () => {
@@ -41,9 +43,6 @@ export default function Recommendations() {
   const handlePrintReport = () => {
     printReport(analysisResults, aiAnalysis, userData);
   };
-
-  const interaction = selectedInteraction;
-  const hasResults = analysisResults && analysisResults.interactions;
 
   const recommendations = {
     contraindicated: [
